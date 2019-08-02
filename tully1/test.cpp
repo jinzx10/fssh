@@ -16,14 +16,19 @@ int main() {
 	arma::vec xgrid = arma::linspace(xmin, xmax, nx);
 
 	arma::mat x_eigval = arma::zeros(nx, 3);
-	x_eigval.col(0) = xgrid;
-	arma::uvec idx = {1,2};
+	arma::cx_mat x_dc = arma::zeros<arma::cx_mat>(nx, 2);
 
+	x_eigval.col(0) = xgrid;
+	x_dc.col(0) = arma::cx_vec{xgrid, arma::zeros(nx)};
+
+	arma::uvec idx = {1,2};
 	for (arma::uword i = 0; i < nx; ++i) {
 		x_eigval.row(i).cols(1,2) = model.eigval(xgrid(i)).t();
+		x_dc(i,1) = model.dc01(xgrid(i));
 	}
 
 	x_eigval.save("eigval.txt", arma::raw_ascii);
+	x_dc.save("dc.txt", arma::raw_ascii);
 
 	//FSSH<Tully1> sys(&model, 0, -0, 0.1, 10);
 
