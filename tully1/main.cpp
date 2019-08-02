@@ -15,10 +15,12 @@ int main() {
 	double xmax = 10;
 	arma::vec xgrid = arma::linspace(xmin, xmax, nx);
 
-	arma::mat x_eigval = arma::zeros(2, nx);
+	arma::mat x_eigval = arma::zeros(nx, 3);
+	x_eigval.col(0) = xgrid;
+	arma::uvec idx = {1,2};
 
 	for (arma::uword i = 0; i < nx; ++i) {
-		x_eigval.col(i) = model.eigval(xgrid(i));
+		x_eigval.row(i).cols(1,2) = model.eigval(xgrid(i)).t();
 	}
 
 	x_eigval.save("eigval.txt", arma::raw_ascii);
