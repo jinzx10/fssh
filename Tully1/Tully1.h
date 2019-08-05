@@ -51,6 +51,9 @@ class Tully1
 		std::complex<double>		dc01(double x);
 		std::complex<double>		dc10(double x);
 
+		// number of potential energy surfaces
+		arma::uword					num_elec_dofs();
+
 	private:
 		// model parameters
 		double						A;

@@ -82,7 +82,7 @@ arma::cx_mat Tully1::eigvec(double x) {
 	eig_sym(eval, evec, V(x));
 
 	// adjust the phase so that the largest number is real and positive
-	evec.each_col(adj_phase);
+	evec.each_col(set_max_real_positive);
 
 	// sort states according to ascending order of eigen-energies
 	arma::uvec idx_sort = arma::sort_index(eval);
@@ -109,4 +109,7 @@ std::complex<double> Tully1::dc10(double x) {
 	return -std::conj(dc01(x));
 }
 
+arma::uword Tully1::num_elec_dofs() {
+	return 2;
+}
 

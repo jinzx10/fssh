@@ -1,2 +1,2 @@
 # fssh
-Fewest switches surface hopping
+Tully's Fewest switches surface hopping
