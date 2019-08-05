@@ -35,7 +35,7 @@ int main() {
 		x_dc_imag(i,1) = std::imag(dc);
 	}
 
-	//x_eigval.save("eigval.txt", arma::raw_ascii);
+	x_eigval.save("eigval.txt", arma::raw_ascii);
 	x_dc_real.save("dc_real.txt", arma::raw_ascii);
 	x_dc_imag.save("dc_imag.txt", arma::raw_ascii);
 
