@@ -13,22 +13,25 @@ FSSH<Model>::FSSH():
 template <typename Model>
 FSSH<Model>::FSSH(
 		Model*			model_,
-		int				state0_,
-		arma::cx_mat	denmat0_,
 		double			x0_,
 		double			v0_,
-		double  		dt_			):
-	model(model_), init_state(state0_), init_denmat(denmat0_), init_x(x0_), init_v(v0_),
-	dt(dt_), init_eigvec(), init_eigval()
+		double  		dt_,
+		arma::cx_mat	denmat0_,
+		int				state0_		):
+	model(model_), dt(dt_), init_x(x0_), init_v(v0_),
+	init_denmat(denmat0_), init_state(state0_), init_eigvec(), init_eigval()
 {
 	init();
 }
 
 template <typename Model>
 void FSSH<Model>::init() {
+	if (init_denmat.is_empty()) {
+		init_denmat = pure_denmat(model->num_elec_dofs());
+	}
+
 	arma::eig_sym(init_eigval, init_eigvec, model->V(init_x));
 
-	// adjust initial phase
 	// set the largest-magnitude number to be real and positive
 	init_eigvec.each_col(set_max_real_positive);
 
@@ -41,13 +44,13 @@ void FSSH<Model>::init() {
 }
 
 template <typename Model>
-void FSSH<Model>::init(Model* model_, int state0_, arma::cx_mat denmat0_, double x0_, double v0_, double dt_) {
+void FSSH<Model>::init(Model* model_, double x0_, double v0_, double dt_, arma::cx_mat denmat0_, int state0_) {
 	model = model_;
-	init_state = state0_;
-	init_denmat = denmat0_;
 	init_x = x0_;
 	init_v = v0_;
 	dt = dt_;
+	init_denmat = denmat0_;
+	init_state = state0_;
 	init();
 }
 

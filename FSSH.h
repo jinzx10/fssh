@@ -2,7 +2,6 @@
 #define __FSSH_H__
 
 #include <armadillo>
-#include "aux.h"
 
 template<typename Model>
 class FSSH
@@ -19,7 +18,7 @@ class FSSH
 
 		// initialize
 		void					init();
-		void					init(Model*, double, double, double, arma::cx_mat, int);
+		void					init(Model*, double, double, double, arma::cx_mat = {}, int = 0);
 
 		Model*					model;
 		double					dt;
@@ -42,7 +41,7 @@ class FSSH
 
 		void					propagate();
 		//void 					prob();
-		std::complex<double>	dc(int, int);
+		//std::complex<double>	dc(int, int);
 
 	private:
 
