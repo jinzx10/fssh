@@ -80,6 +80,7 @@ arma::cx_mat Tully1::eigvec(double x) {
 	arma::cx_mat evec;
 	eig_sym(eval, evec, V(x));
 	arma::uvec idx_sort = arma::sort_index(eval);
+	evec.for_each
 	return evec.cols(idx_sort);
 }
 

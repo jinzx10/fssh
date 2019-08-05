@@ -48,6 +48,7 @@ class Tully1
 		double 						F1(double x);
 
 		// derivative coupling (phase unadjusted)
+		arma::cx_mat				dc(double x);
 		std::complex<double>		dc01(double x);
 		std::complex<double>		dc10(double x);
 

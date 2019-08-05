@@ -2,7 +2,7 @@
 #include <cmath>
 #include <complex>
 #include "Tully1.h"
-#include "FSSH.h"
+#include "../FSSH.h"
 
 extern const double PI = acos(-1);
 extern const std::complex<double> I(0.0, 1.0);

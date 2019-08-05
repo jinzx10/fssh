@@ -18,23 +18,23 @@ class FSSH
 		double					dt;
 
 		// initial condition
-		int						state0;
-		double					x0;
-		double 					v0;
-		arma::cx_mat			eigvec0;
-		arma::vec				eigval0;
+		int						init_state;
+		double					init_x;
+		double 					init_v;
+		arma::cx_mat			init_eigvec;
+		arma::vec				init_eigval;
 
 		// dynamical quantities
 		int						state;
 		double					x;
 		double					v;
-		arma::cx_mat			eigvecs;
-		arma::vec				eigvals;
+		arma::cx_mat			eigvec;
+		arma::vec				eigval;
 
 		void					init();
 		//void					propagate();
 		//void 					prob();
-		//std::complex<double>	dc(int, int);
+		std::complex<double>	dc(int, int);
 
 	private:
 
