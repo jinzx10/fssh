@@ -34,7 +34,7 @@ void FSSH<Model>::init() {
 	eigval = init_eigval;
 }
 
-template <typename Model>
-std::complex<double> FSSH<Model>::dc(int i, int j) {
-
-}
+//template <typename Model>
+//std::complex<double> FSSH<Model>::dc(int i, int j) {
+//
+//}

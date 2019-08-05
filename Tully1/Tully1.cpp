@@ -1,4 +1,5 @@
 #include "Tully1.h"
+#include "../aux.h"
 
 extern const double PI;
 extern const std::complex<double> I;
@@ -79,13 +80,17 @@ arma::cx_mat Tully1::eigvec(double x) {
 	arma::vec eval;
 	arma::cx_mat evec;
 	eig_sym(eval, evec, V(x));
+
+	// adjust the phase so that the largest number is real and positive
+	evec.each_col(adj_phase);
+
+	// sort states according to ascending order of eigen-energies
 	arma::uvec idx_sort = arma::sort_index(eval);
-	evec.for_each
 	return evec.cols(idx_sort);
 }
 
 arma::vec Tully1::F(double x) {
-	return arma::vec{F0(x), F1(x)};
+	return -arma::real( dV_eig(x).diag() );
 }
 
 double Tully1::F0(double x) {
