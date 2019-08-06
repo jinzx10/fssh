@@ -13,7 +13,9 @@ class Tully1
 				double 				B_,
 				double 				C_,
 				double 				D_,
-				double 				cpl_phase_ );
+				double 				cpl_phase_,
+				double				xmin_, 
+				double				xmax_		 );
 
 		// diabatic potential energy matrix
 		double						V00(double x);
@@ -29,7 +31,7 @@ class Tully1
 		std::complex<double> 		dV10(double x);
 		arma::cx_mat				dV(double x);
 
-		// dV in eigvec basis
+		// in eigvec basis
 		arma::cx_mat				dV_eig(double x);
 
 		// adiabatic energy
@@ -51,8 +53,11 @@ class Tully1
 		std::complex<double>		dc01(double x);
 		std::complex<double>		dc10(double x);
 
+		// some constants
 		// number of potential energy surfaces
-		arma::uword					num_elec_dofs();
+		arma::uword					num_elec_dofs;
+		double						xmin;
+		double						xmax;
 
 	private:
 		// model parameters

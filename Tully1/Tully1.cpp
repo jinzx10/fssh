@@ -5,19 +5,11 @@ extern const double PI;
 extern const std::complex<double> I;
 
 Tully1::Tully1():
-	A(0.01),
-	B(1.6),
-	C(0.005),
-	D(1.0),
-	cpl_phase(0.0)
+	num_elec_dofs(2), xmin(-10.0), xmax(10.0), A(0.01), B(1.6), C(0.005), D(1.0), cpl_phase(0.0)
 {}
 
-Tully1::Tully1(double A_, double B_, double C_, double D_, double cpl_phase_):
-	A(A_),
-	B(B_),
-	C(C_),
-	D(D_),
-	cpl_phase(cpl_phase_)
+Tully1::Tully1(double A_, double B_, double C_, double D_, double cpl_phase_, double xmin_, double xmax_):
+	xmin(xmin_), xmax(xmax_), A(A_), B(B_), C(C_), D(D_), cpl_phase(cpl_phase_)
 {}
 
 double Tully1::V00(double x) {
@@ -107,9 +99,5 @@ std::complex<double> Tully1::dc01(double x) {
 
 std::complex<double> Tully1::dc10(double x) {
 	return -std::conj(dc01(x));
-}
-
-arma::uword Tully1::num_elec_dofs() {
-	return 2;
 }
 
