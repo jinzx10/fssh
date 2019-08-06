@@ -4,7 +4,6 @@
 #include <armadillo>
 #include <cmath>
 #include <complex>
-#include <function>
 
 extern const std::complex<double> I;
 extern const double PI;
