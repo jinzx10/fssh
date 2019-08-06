@@ -91,13 +91,16 @@ void FSSH<Model>::propagate() {
 	while (step_counter < max_num_steps && x < model->xmax && x > model->xmin) {
 		// fourth-order Runge-Kutta
 		arma::vec xv = {x, v};
-		arma::vec k1 = dt * rk4_func(xv);
-		arma::vec k2 = dt * rk4_func(xv + 0.5 * k1);
-		arma::vec k3 = dt * rk4_func(xv + 0.5 * k2);
-		arma::vec k4 = dt * rk4_func(xv + k3);
-		xv += (k1 + 2*k2 + 2*k3 + k4) / 6.0;
+		xv = rk4_step(xv, dt, this->rk4_func);
+		//arma::vec k1 = dt * rk4_func(xv);
+		//arma::vec k2 = dt * rk4_func(xv + 0.5 * k1);
+		//arma::vec k3 = dt * rk4_func(xv + 0.5 * k2);
+		//arma::vec k4 = dt * rk4_func(xv + k3);
+		//xv += (k1 + 2*k2 + 2*k3 + k4) / 6.0;
 		x = xv(0);
 		v = xv(1);
+
+
 
 		step_counter += 1;
 	}
