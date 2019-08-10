@@ -12,7 +12,7 @@ class TLS
 	public:
 		// Param is double if ndim == 1, is arma::vec otherwise
 		typedef typename std::conditional<(ndim==1), double, arma::Col<double>::fixed<ndim>>::type Param;
-		//T_cpl is std::complex<double> or double depending on is_cplx
+		// T_cpl is std::complex<double> or double depending on is_cplx
 		typedef typename std::conditional<is_cplx, std::complex<double>, double>::type T_cpl;
 		typedef double (*PES)(Param);
 		typedef T_cpl (*Cpl)(Param);
