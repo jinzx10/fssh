@@ -12,15 +12,15 @@ extern const double PI;
 extern const double DELTA;
 
 
-void set_max_real_positive(arma::cx_vec& col);
-arma::cx_mat pure_denmat(arma::uword sz);
+//void set_max_real_positive(arma::cx_vec& col);
+//arma::cx_mat pure_denmat(arma::uword sz);
 
 
 // this is a special case: function does not explicitly depend on t
 // otherwise the general Runge-Kutta method should take the form
 //T rk4_step(double t, T yn, double dt, std::function<T(double,T)> f);
 template <typename T>
-T rk4_step(T yn, double dt, std::function<T(T)> f) {
+T rk4_step(const T& yn, const double& dt, const std::function<T(T)>& f) {
 	T k1 = dt * f( yn );
 	T k2 = dt * f( yn + 0.5*k1 );
 	T k3 = dt * f( yn + 0.5*k2 );
@@ -30,17 +30,21 @@ T rk4_step(T yn, double dt, std::function<T(T)> f) {
 
 
 template <bool is_cplx> struct KeepCplx {
-	static std::complex<double> value(std::complex<double> z) {return z;}
+	static std::complex<double> value(const std::complex<double>& z) {return z;}
 };
 
 template <> struct KeepCplx<false> {
-	static double value(std::complex<double> z) {return z.real();}
+	static double value(const std::complex<double>& z) {return z.real();}
 };
 
 
-template <typename F> F diff(F f) {
-	return [f]() {
-	};
-}
+template <size_t ndim, bool is_cplx>
+class Diff 
+{
+	public:
+		using Arg			= typename std::conditional< (ndim==1), double, arma::Col<double>::fixed<ndim> >::type;
+		using T_ret			= typename std::conditional< is_cplx, std::complex<double>, double >::type;
+
+};
 
 #endif
