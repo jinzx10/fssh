@@ -142,7 +142,7 @@ template <size_t ndim, bool is_cplx> typename TLS<ndim, is_cplx>::ElecVec TLS<nd
 		} :
 		ElecVec{
 			-std::sin(theta(p)/2.0) * KeepCplx<is_cplx>::value( std::exp(-I * phi(p) / 2.0) ),
-			std::cos(theta(p)/2.0)*KeepCplx<is_cplx>::value( std::exp(I * phi(p) / 2.0) )
+			std::cos(theta(p)/2.0) * KeepCplx<is_cplx>::value( std::exp(I * phi(p) / 2.0) )
 		};
 }
 
