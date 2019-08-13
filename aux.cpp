@@ -2,6 +2,7 @@
 
 const std::complex<double> I(0.0, 1.0);
 const double PI = acos(-1);
+const double DELTA = 1e-8;
 
 void set_max_real_positive(arma::cx_vec& col) {
 	arma::uword idx_max = arma::index_max(col);
