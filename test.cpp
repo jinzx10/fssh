@@ -1,7 +1,5 @@
 #include "TLS.h"
 
-const std::complex<double> I(0,1);
-const double PI = acos(-1);
 const double A = 0.01, B = 1.6, C = 0.005, D = 1.0, cpl_phase = 0.1;
 
 auto V00 = [](double x) {
@@ -25,5 +23,8 @@ int main() {
 	tls.eigval(0.2).print();
 
 	tls.eigvec(0.2).print();
+
+	auto g = diff(V00);
+	std::cout << g(0.02) << std::endl;
 	return 0;
 }
