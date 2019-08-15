@@ -6,7 +6,7 @@
 #include <complex>
 #include <armadillo>
 
-template < size_t ndim, bool is_cplx = false >
+template < typename Arg = double, bool is_cplx = false >
 class TLS
 {
 	public:

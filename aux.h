@@ -11,10 +11,8 @@ extern std::complex<double> const I;
 extern double const PI;
 extern double const DELTA;
 
-
 //void set_max_real_positive(arma::cx_vec& col);
 //arma::cx_mat pure_denmat(arma::uword sz);
-
 
 // this is a special case: function does not explicitly depend on t
 // otherwise the general Runge-Kutta method should take the form
