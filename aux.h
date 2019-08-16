@@ -10,6 +10,11 @@ extern std::complex<double> const I;
 extern double const PI;
 extern double const DELTA;
 
+
+template <typename ...> using void_t = void;
+template <bool is_cplx> using num_t = typename std::conditional<is_cplx, std::complex<double>, double>::type;
+
+
 //void set_max_real_positive(arma::cx_vec& col);
 //arma::cx_mat pure_denmat(arma::uword sz);
 
@@ -26,16 +31,15 @@ T rk4_step(T const& yn, double const& dt, std::function<T(T)> const& f) {
 }
 
 
-template <bool is_cplx = true> struct KeepCplx {
-	static std::complex<double> value(std::complex<double> const& z) {return z;}
-};
+template <bool is_cplx = true> struct KeepCplx { static std::complex<double> value(std::complex<double> const& z) {return z;} };
+template <> struct KeepCplx<false> { static double value(std::complex<double> const& z) {return z.real();} };
 
-template <> struct KeepCplx<false> {
-	static double value(std::complex<double> const& z) {return z.real();}
-};
-
-std::function<double(double)> diff(std::function<double(double)> const& f);
-std::function<std::complex<double>(double)> diff(std::function<std::complex<double>(double)> const& f);
-
+template <bool is_cplx>
+std::function<num_t<is_cplx>(double)> diff(std::function<num_t<is_cplx>(double)> const& f) {
+	return [f] (double const& x) -> num_t<is_cplx> {
+		return (-f(x-3.0*DELTA)/60.0 + 3.0*f(x-2.0*DELTA)/20.0 - 3.0*f(x-DELTA)/4.0
+				+f(x+3.0*DELTA)/60.0 - 3.0*f(x+2.0*DELTA)/20.0 + 3.0*f(x+DELTA)/4.0) / DELTA;
+	};
+}
 
 #endif
