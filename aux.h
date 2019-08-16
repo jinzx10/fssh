@@ -6,7 +6,6 @@
 #include <complex>
 #include <functional>
 
-
 extern std::complex<double> const I;
 extern double const PI;
 extern double const DELTA;
@@ -27,7 +26,7 @@ T rk4_step(T const& yn, double const& dt, std::function<T(T)> const& f) {
 }
 
 
-template <bool is_cplx> struct KeepCplx {
+template <bool is_cplx = true> struct KeepCplx {
 	static std::complex<double> value(std::complex<double> const& z) {return z;}
 };
 
@@ -35,8 +34,8 @@ template <> struct KeepCplx<false> {
 	static double value(std::complex<double> const& z) {return z.real();}
 };
 
-std::function<double(double const&)> diff(std::function<double(double const&)> const& f);
-std::function<std::complex<double>(double const&)> diff(std::function<std::complex<double>(double const&)> const& f);
+std::function<double(double)> diff(std::function<double(double)> const& f);
+std::function<std::complex<double>(double)> diff(std::function<std::complex<double>(double)> const& f);
 
 
 #endif

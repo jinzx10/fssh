@@ -4,14 +4,14 @@ extern const std::complex<double> I(0.0, 1.0);
 extern const double PI = acos(-1);
 extern const double DELTA = 1e-8;
 
-std::function<double(double const&)> diff(std::function<double(double const&)> const& f) {
+std::function<double(double)> diff(std::function<double(double)> const& f) {
 	return [f] (double const& x) -> double {
 		return (-f(x-3*DELTA)/60 + 3.0*f(x-2*DELTA)/20 - 3.0*f(x-DELTA)/4
                 +f(x+3*DELTA)/60 - 3.0*f(x+2*DELTA)/20 + 3.0*f(x+DELTA)/4) / DELTA;
 	};
 }
 
-std::function<std::complex<double>(double const&)> diff(std::function<std::complex<double>(double const&)> const& f) {
+std::function<std::complex<double>(double)> diff(std::function<std::complex<double>(double)> const& f) {
 	return [f] (double const& x) -> std::complex<double> {
 		return (-f(x-3*DELTA)/60.0 + 3.0*f(x-2*DELTA)/20.0 - 3.0*f(x-DELTA)/4.0
                 +f(x+3*DELTA)/60.0 - 3.0*f(x+2*DELTA)/20.0 + 3.0*f(x+DELTA)/4.0) / DELTA;
