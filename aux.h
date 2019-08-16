@@ -10,10 +10,8 @@ extern std::complex<double> const I;
 extern double const PI;
 extern double const DELTA;
 
-
 template <typename ...> using void_t = void;
 template <bool is_cplx> using num_t = typename std::conditional<is_cplx, std::complex<double>, double>::type;
-
 
 //void set_max_real_positive(arma::cx_vec& col);
 //arma::cx_mat pure_denmat(arma::uword sz);
