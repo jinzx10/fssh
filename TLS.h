@@ -31,7 +31,25 @@ class TLS
 		);
 
 		// Hamiltonian
-		Mat2				V(Params const&);
+		Mat2				H(Params const&);
+		Val					H(Params const&, bool const&, bool const&);
+
+		double				eigval(Params const&, bool const&);
+		arma::vec2			eigval(Params const&);
+		Vec2				eigvec(Params const&, bool const&); // analytical expression, symmetric phase
+		Mat2				eigvec(Params const&);
+
+		Mat2				dH(Params const&, size_t const&);
+		Cube2				dH(Params const&);
+
+		Params				F(Params const&, bool const&); // force from adiabatic PES
+		Vals				drvcpl(Params const&, bool const&, bool const&);
+
+		ParamChk			is_within;
+
+
+	private:
+
 		DiabPES				V00;
 		DiabPES 			V11;
 		DiabCpl 			V01;
@@ -48,11 +66,6 @@ class TLS
 		double				theta(Params const&);
 		double				phi(Params const&);
 
-		double				eigval(Params const&, bool const&);
-		arma::vec2			eigval(Params const&);
-		Vec2				eigvec(Params const&, bool const&); // analytical expression, symmetric phase
-		Mat2				eigvec(Params const&);
-
 		double				dV00(Params const&, size_t const&);
 		Params				dV00(Params const&);
 		double				dV11(Params const&, size_t const&);
@@ -61,15 +74,7 @@ class TLS
 		Vals				dV01(Params const&);
 		Val					dV10(Params const&, size_t const&);
 		Vals				dV10(Params const&);
-		Mat2				dV(Params const&, size_t const&);
-		Cube2				dV(Params const&);
 
-		Params				F(Params const&, bool const&); // force from adiabatic PES
-		Vals				drvcpl(Params const&, bool const&, bool const&);
-
-		ParamChk			is_within;
-
-	private:
 		static bool			always(Params const&) { return true; }
 };
 
@@ -80,8 +85,13 @@ template <size_t ndim, bool is_cplx> TLS<ndim, is_cplx>::TLS( DiabPES V00_, Diab
 }
 
 
-template <size_t ndim, bool is_cplx> typename TLS<ndim, is_cplx>::Mat2 TLS<ndim, is_cplx>::V(TLS::Params const& p) {
+template <size_t ndim, bool is_cplx> typename TLS<ndim, is_cplx>::Mat2 TLS<ndim, is_cplx>::H(TLS::Params const& p) {
 	return Mat2{ {V00(p), V01(p)}, {V10(p), V11(p)} };
+}
+
+
+template <size_t ndim, bool is_cplx> typename TLS<ndim, is_cplx>::Val TLS<ndim, is_cplx>::H(TLS::Params const& p, bool const& i, bool const& j) {
+	return i ? (j ? V11(p) : V10(p)) : (j ? V01(p) : V00(p));
 }
 
 
@@ -188,12 +198,12 @@ template <size_t ndim, bool is_cplx> typename TLS<ndim,is_cplx>::Vals TLS<ndim, 
 }
 
 
-template <size_t ndim, bool is_cplx> typename TLS<ndim, is_cplx>::Mat2 TLS<ndim, is_cplx>::dV(TLS::Params const& p, size_t const& d) {
+template <size_t ndim, bool is_cplx> typename TLS<ndim, is_cplx>::Mat2 TLS<ndim, is_cplx>::dH(TLS::Params const& p, size_t const& d) {
 	return Mat2{ {dV00(p,d), dV01(p,d)}, {dV10(p,d), dV11(p,d)} };
 }
 
 
-template <size_t ndim, bool is_cplx> typename TLS<ndim, is_cplx>::Cube2 TLS<ndim, is_cplx>::dV(TLS::Params const& p) {
+template <size_t ndim, bool is_cplx> typename TLS<ndim, is_cplx>::Cube2 TLS<ndim, is_cplx>::dH(TLS::Params const& p) {
 	Cube2 c2;
 	for (size_t d = 0; d != ndim; ++d)
 		c2.slice(d) = dV(p,d);
@@ -202,7 +212,7 @@ template <size_t ndim, bool is_cplx> typename TLS<ndim, is_cplx>::Cube2 TLS<ndim
 
 
 template <size_t ndim, bool is_cplx> typename TLS<ndim, is_cplx>::Params TLS<ndim, is_cplx>::F(TLS::Params const& p, bool const& state) {
-	return 
+	return ;
 }
 
 
