@@ -1,7 +1,7 @@
 #include <complex>
 #include <type_traits>
 #include "aux.h"
-//#include "TLS.h"
+#include "TLS.h"
 
 const double A = 0.01, B = 1.6, C = 0.005, D = 1.0, cpl_phase = 0.1;
 
@@ -110,7 +110,18 @@ int main() {
 	std::cout << "   test diff end" << std::endl;
 
 
-	//TLS<1, false> tls(V00, V11, V01);
+	////////////////////////////////////////
+	//				TLS
+	////////////////////////////////////////
+	std::cout << "   test TLS start" << std::endl;
+
+	TLS<1, false> tls(V00, V11, V01);
+	TLS<1, true> tls_cplx(V00, V11, V01_cplx);
+
+	std::cout << tls.eigvec(1) << std::endl;
+	std::cout << tls.drvcpl(1,1,1,0) << std::endl;
+	std::cout << tls_cplx.eigvec(1) << std::endl;
+	std::cout << tls_cplx.drvcpl(1,0,0,0) << std::endl;
 
 	//std::cout << tls.V01(0.2) << std::endl;
 	//std::cout << tls.V10(0.2) << std::endl;

@@ -14,8 +14,8 @@ class TLS
 		using Params		= typename std::conditional< (ndim==1), double, arma::Col<double>::fixed<ndim> >::type;
 		using Vals			= typename std::conditional< (ndim==1), Val, typename arma::Col<Val>::template fixed<ndim> >::type;
 
-		using DiabPES		= std::function<double(Params)>;
-		using DiabCpl		= std::function<Val(Params)>;
+		using Param2d		= std::function<double(Params)>;
+		using Param2z		= std::function<Val(Params)>;
 		using ParamChk		= std::function<bool(Params)>;
 		
 		using Vec2			= typename arma::Col<Val>::template fixed<2>;
@@ -24,25 +24,26 @@ class TLS
 
 		// constructor
 		TLS(
-				DiabPES			V00_,
-				DiabPES			V11_,
-				DiabCpl			V01_,
+				Param2d			V00_,
+				Param2d			V11_,
+				Param2z			V01_,
 				ParamChk		is_within_ = always
 		);
 
 		// Hamiltonian
 		Mat2				H(Params const&);
 		Val					H(Params const&, bool const&, bool const&);
+		Mat2				dH(Params const&, size_t const&);
+		Cube2				dH(Params const&);
 
 		double				eigval(Params const&, bool const&);
 		arma::vec2			eigval(Params const&);
 		Vec2				eigvec(Params const&, bool const&); // analytical expression, symmetric phase
 		Mat2				eigvec(Params const&);
 
-		Mat2				dH(Params const&, size_t const&);
-		Cube2				dH(Params const&);
-
-		Params				F(Params const&, bool const&); // force from adiabatic PES
+		double				F(Params const&, bool const&, size_t const&); // force from adiabatic PES
+		Params				F(Params const&, bool const&);
+		Val					drvcpl(Params const&, bool const&, bool const&, size_t const&);
 		Vals				drvcpl(Params const&, bool const&, bool const&);
 
 		ParamChk			is_within;
@@ -50,21 +51,21 @@ class TLS
 
 	private:
 
-		DiabPES				V00;
-		DiabPES 			V11;
-		DiabCpl 			V01;
-		DiabCpl 			V10;
+		Param2d				V00;
+		Param2d 			V11;
+		Param2z 			V01;
+		Param2z 			V10;
 
 		// V = d0*I + \sum_i d_i * sigma_i
-		double				d0(Params const&);
-		double 				dx(Params const&);
-		double 				dy(Params const&);
-		double 				dz(Params const&);
+		Param2d				d0;
+		Param2d				dx;
+		Param2d				dy;
+		Param2d				dz;
 
 		// spherical coordinates of (dx,dy,dz) in Bloch sphere
-		double				r(Params const&);
-		double				theta(Params const&);
-		double				phi(Params const&);
+		Param2d				r;
+		Param2d				theta;
+		Param2d				phi;
 
 		double				dV00(Params const&, size_t const&);
 		Params				dV00(Params const&);
@@ -79,9 +80,16 @@ class TLS
 };
 
 
-template <size_t ndim, bool is_cplx> TLS<ndim, is_cplx>::TLS( DiabPES V00_, DiabPES V11_, DiabCpl V01_, ParamChk is_within_ ):
+template <size_t ndim, bool is_cplx> TLS<ndim, is_cplx>::TLS( Param2d V00_, Param2d V11_, Param2z V01_, ParamChk is_within_ ):
 	V00(V00_), V11(V11_), V01(V01_), is_within(is_within_) {
-	V10 = [this](Params const& p) { return keep_cplx<is_cplx>( std::conj(V01(p)) ); };
+	V10 = [this](Params const& p) -> Val { return keep_cplx<is_cplx>( std::conj(V01(p)) ); };
+	d0 = [this](Params const& p) -> double { return 0.5 * ( V00(p) + V11(p) ); };
+	dz = [this](Params const& p) -> double { return 0.5 * ( V00(p) - V11(p) ); };
+	dx = [this](Params const& p) -> double { return std::real(V01(p)); };
+	dy = [this](Params const& p) -> double { return -std::imag(V01(p)); };
+	r = [this](Params const& p) -> double { return std::sqrt( std::pow(dx(p),2) + std::pow(dy(p),2) + std::pow(dz(p),2) ); };
+	theta = [this](Params const& p) -> double { return std::acos( dz(p) / r(p) ); };
+	phi = [this](Params const& p) -> double { return (dy(p) > 0 ? 1 : -1) * std::acos( dx(p) / std::sqrt(std::pow(dx(p),2) + std::pow(dy(p),2)) ); };
 }
 
 
@@ -92,41 +100,6 @@ template <size_t ndim, bool is_cplx> typename TLS<ndim, is_cplx>::Mat2 TLS<ndim,
 
 template <size_t ndim, bool is_cplx> typename TLS<ndim, is_cplx>::Val TLS<ndim, is_cplx>::H(TLS::Params const& p, bool const& i, bool const& j) {
 	return i ? (j ? V11(p) : V10(p)) : (j ? V01(p) : V00(p));
-}
-
-
-template <size_t ndim, bool is_cplx> double TLS<ndim, is_cplx>::d0(TLS::Params const& p) {
-	return 0.5 * (V00(p) + V11(p));
-}
-
-
-template <size_t ndim, bool is_cplx> double TLS<ndim, is_cplx>::dz(TLS::Params const& p) {
-	return 0.5 * (V00(p) - V11(p));
-}
-
-
-template <size_t ndim, bool is_cplx> double TLS<ndim, is_cplx>::dx(TLS::Params const& p) {
-	return std::real(V01(p));
-}
-
-
-template <size_t ndim, bool is_cplx> double TLS<ndim, is_cplx>::dy(TLS::Params const& p) {
-	return -std::imag(V01(p));
-}
-
-
-template <size_t ndim, bool is_cplx> double TLS<ndim, is_cplx>::r(TLS::Params const& p) {
-	return std::sqrt( std::pow(dx(p),2) + std::pow(dy(p),2) + std::pow(dz(p),2) );
-}
-
-
-template <size_t ndim, bool is_cplx> double TLS<ndim, is_cplx>::theta(TLS::Params const& p) {
-	return std::acos( dz(p) / r(p) );
-}
-
-
-template <size_t ndim, bool is_cplx> double TLS<ndim, is_cplx>::phi(TLS::Params const& p) {
-	return (dy(p) > 0 ? 1 : -1) * std::acos( dx(p) / std::sqrt(std::pow(dx(p),2) + std::pow(dy(p),2)) );
 }
 
 
@@ -211,13 +184,32 @@ template <size_t ndim, bool is_cplx> typename TLS<ndim, is_cplx>::Cube2 TLS<ndim
 }
 
 
-template <size_t ndim, bool is_cplx> typename TLS<ndim, is_cplx>::Params TLS<ndim, is_cplx>::F(TLS::Params const& p, bool const& state) {
-	return ;
+template <size_t ndim, bool is_cplx> double TLS<ndim, is_cplx>::F(TLS::Params const& p, bool const& state, size_t const& d) {
+	return std::real(eigvec(p, state).t() * dH(p,d) * eigvec(p, state));
 }
 
 
+template <size_t ndim, bool is_cplx> typename TLS<ndim, is_cplx>::Params TLS<ndim, is_cplx>::F(TLS::Params const& p, bool const& state) {
+	Params force;
+	for (size_t d = 0; d != ndim; ++d)
+		force(d) = F(p, state, d);
+	return force;
+}
 
 
+template <size_t ndim, bool is_cplx> typename TLS<ndim, is_cplx>::Val TLS<ndim, is_cplx>::drvcpl(TLS::Params const& p, bool const& i, bool const& j, size_t const& d) {
+	return keep_cplx<is_cplx>(
+			(i==j) ? ( (i ? -1 : 1) * 0.5 * I * std::cos(theta(p)) * Diff<ndim,false>::pdiff(phi)(p,d) ) :
+					decay<Val,1,1>(eigvec(p,i).t() * dH(p,d) * eigvec(p,j) / ( eigval(p,j) - eigval(p,i) )) );
+}
+
+
+template <size_t ndim, bool is_cplx> typename TLS<ndim, is_cplx>::Vals TLS<ndim, is_cplx>::drvcpl(TLS::Params const& p, bool const& i, bool const& j) {
+	Vals dc;
+	for (size_t d = 0; d != ndim; ++d)
+		dc(d) = drvcpl(p, i, j, d);
+	return dc;
+}
 
 
 #endif
