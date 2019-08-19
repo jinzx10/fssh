@@ -198,9 +198,9 @@ template <size_t ndim, bool is_cplx> typename TLS<ndim, is_cplx>::Params TLS<ndi
 
 
 template <size_t ndim, bool is_cplx> typename TLS<ndim, is_cplx>::Val TLS<ndim, is_cplx>::drvcpl(TLS::Params const& p, bool const& i, bool const& j, size_t const& d) {
-	return keep_cplx<is_cplx>(
-			(i==j) ? ( (i ? -1 : 1) * 0.5 * I * std::cos(theta(p)) * Diff<ndim,false>::pdiff(phi)(p,d) ) :
-					decay<Val,1,1>(eigvec(p,i).t() * dH(p,d) * eigvec(p,j) / ( eigval(p,j) - eigval(p,i) )) );
+	return keep_cplx<is_cplx>( (i==j) ? 
+			( (i ? -1 : 1) * 0.5 * I * std::cos(theta(p)) * Diff<ndim,false>::pdiff(phi)(p,d) ) :
+			decay<Val,1,1>(eigvec(p,i).t() * dH(p,d) * eigvec(p,j) / ( eigval(p,j) - eigval(p,i) )) );
 }
 
 
