@@ -21,6 +21,7 @@ template <typename T, size_t ndim> typename std::enable_if<(ndim!=1), typename a
 template <typename T, size_t ndim1, size_t ndim2> typename std::enable_if<ndim1==1 && ndim2==1, T>::type decay(typename arma::Mat<T>::template fixed<1,1> const& zv) { return zv(0,0); }
 template <typename T, size_t ndim1, size_t ndim2> typename std::enable_if<ndim1!=1 || ndim2!=1, typename arma::Mat<T>::template fixed<ndim1,ndim2>>::type decay(typename arma::Mat<T>::template fixed<ndim1,ndim2> const& zv) { return zv; }
 
+
 template <size_t ndim> arma::Col<double>::fixed<ndim> pt(arma::Col<double>::fixed<ndim> x, size_t const& d, double const& dx) { x[d] += dx; return x; }
 template <size_t> double pt(double x, size_t const& d, double const& dx) { return x+dx; }
 
