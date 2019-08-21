@@ -12,27 +12,27 @@ auto V01_cplx = [](double x) { return C * exp(-D*x*x) * exp(I*PI*cpl_phase); };
 
 int main() {
 	////////////////////////////////////////
-	//				decay
+	//				squeeze
 	////////////////////////////////////////
 	std::cout << std::boolalpha;
-	std::cout << "   test decay start" << std::endl;
+	std::cout << "   test squeeze start" << std::endl;
 
 	arma::Col<double>::fixed<1> v = {1};
 	arma::Col<double>::fixed<2> u = {1,2};
 	arma::Col<std::complex<double>>::fixed<1> c = {1};
 	arma::Col<std::complex<double>>::fixed<2> z = {1,2};
 
-	auto dv = decay<double,1>(v);
-	auto du = decay<double,2>(u);
-	auto dc = decay<std::complex<double>,1>(c);
-	auto dz = decay<std::complex<double>,2>(z);
+	auto dv = squeeze<double,1>(v);
+	auto du = squeeze<double,2>(u);
+	auto dc = squeeze<std::complex<double>,1>(c);
+	auto dz = squeeze<std::complex<double>,2>(z);
 
 	std::cout << std::is_same<decltype(dv), double>::value << std::endl;
 	std::cout << std::is_same<decltype(du), arma::vec2>::value << std::endl;
 	std::cout << std::is_same<decltype(dc), std::complex<double>>::value << std::endl;
 	std::cout << std::is_same<decltype(dz), arma::cx_vec2>::value << std::endl;
 
-	std::cout << "   test decay end" << std::endl;
+	std::cout << "   test squeeze end" << std::endl;
 
 
 	////////////////////////////////////////
@@ -67,12 +67,12 @@ int main() {
 	std::cout << "   test diff start" << std::endl;
 
 	auto f = [](double x) {return x*x-3*x;};
-	auto df = Diff<1,false>::pdiff(f);
-	auto df2 = Diff<1,false>::diff(f);
+	auto df = op<1,false>::pardiff1(f);
+	auto df2 = op<1,false>::diff1(f);
 
 	auto g = [](double x) {return std::sin(x)-std::exp(I*PI*x/2.0);};
-	auto dg = Diff<1,true>::pdiff(g);
-	auto dg2 = Diff<1,true>::diff(g);
+	auto dg = op<1,true>::pardiff1(g);
+	auto dg2 = op<1,true>::diff1(g);
 
 	double xt1 = 1.2, xt2 = -3.5;
 	std::cout << (std::abs(2*xt1-3 - df(xt1,0)) < DELTA) << std::endl;
@@ -90,12 +90,12 @@ int main() {
 	std::cout << dg2(xt2) << std::endl;
 
 	auto h = [](arma::vec3 x) {return std::sqrt( std::pow(x(0),2) + std::pow(x(1),2) + std::pow(x(2),2) );};
-	auto dh = Diff<3,false>::pdiff(h);
-	auto dh2 = Diff<3,false>::diff(h);
+	auto dh = op<3,false>::pardiff1(h);
+	auto dh2 = op<3,false>::diff1(h);
 
 	auto l = [](arma::vec2 y) {return std::exp(I*y(0)*y(1)); };
-	auto dl = Diff<2,true>::pdiff(l);
-	auto dl2 = Diff<2,true>::diff(l);
+	auto dl = op<2,true>::pardiff1(l);
+	auto dl2 = op<2,true>::diff1(l);
 
 	arma::vec3 xt3 = {0.8, 4.9, 3.7};
 	std::cout << ( std::abs( xt3(1)/h(xt3) - dh(xt3,1) ) < DELTA ) << std::endl;
