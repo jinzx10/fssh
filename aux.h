@@ -24,7 +24,7 @@ template <typename T, size_t sz> typename std::enable_if<(sz==1), T>::type squee
 template <typename T, size_t sz> typename std::enable_if<(sz!=1), typename arma::Col<T>::template fixed<sz> >::type squeeze(typename arma::Col<T>::template fixed<sz> const& zv) { return zv; }
 
 
-template <size_t sz> arma::Col<double>::fixed<sz> pt(arma::Col<double>::fixed<sz> x, size_t const& i, double const& dx) { x[i] += dx; return x; }
+template <size_t sz> arma::Col<double>::fixed<sz> pt(arma::Col<double>::fixed<sz> x, size_t const& i, double const& dx) { x(i) += dx; return x; }
 template <size_t> double pt(double x, size_t const& i, double const& dx) { return x+dx; }
 
 
