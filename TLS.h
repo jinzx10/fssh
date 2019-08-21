@@ -20,7 +20,6 @@ class TLS : public data_type<2, sz_param, is_cplx>
 		using typename data_type<2, sz_param, is_cplx>::param2e;
 		using typename data_type<2, sz_param, is_cplx>::param2b;
 
-		// constructor
 		TLS(
 				param2d			V00_,
 				param2d			V11_,
@@ -28,12 +27,8 @@ class TLS : public data_type<2, sz_param, is_cplx>
 				param2b			is_within_ = always
 		);
 
-		// Hamiltonian
 		mat_t				H(param_t const&);
 		elem_t				H(param_t const&, bool const&, bool const&);
-		mat_t				dH(param_t const&, size_t const&);
-		cube_t				dH(param_t const&);
-
 		double				eigval(param_t const&, bool const&);
 		arma::vec2			eigval(param_t const&);
 		vec_t				eigvec(param_t const&, bool const&); // analytical expression, symmetric phase
@@ -46,9 +41,10 @@ class TLS : public data_type<2, sz_param, is_cplx>
 
 		param2b				is_within;
 
+		mat_t				dH(param_t const&, size_t const&);
+		cube_t				dH(param_t const&);
 
 	private:
-
 		param2d				V00;
 		param2d 			V11;
 		param2e 			V01;
@@ -78,7 +74,7 @@ class TLS : public data_type<2, sz_param, is_cplx>
 };
 
 
-template <size_t ndim, bool is_cplx> TLS<ndim, is_cplx>::TLS( param2d V00_, param2d V11_, param2e V01_, param2b is_within_ ):
+template <size_t sz_param, bool is_cplx> TLS<sz_param, is_cplx>::TLS( param2d V00_, param2d V11_, param2e V01_, param2b is_within_ ):
 	V00(V00_), V11(V11_), V01(V01_), is_within(is_within_) {
 	V10 = [this](param_t const& p) -> elem_t { return keep_cplx<is_cplx>( std::conj(V01(p)) ); };
 	d0 = [this](param_t const& p) -> double { return 0.5 * ( V00(p) + V11(p) ); };
@@ -91,27 +87,27 @@ template <size_t ndim, bool is_cplx> TLS<ndim, is_cplx>::TLS( param2d V00_, para
 }
 
 
-template <size_t ndim, bool is_cplx> typename TLS<ndim, is_cplx>::mat_t TLS<ndim, is_cplx>::H(TLS::param_t const& p) {
+template <size_t sz_param, bool is_cplx> typename TLS<sz_param, is_cplx>::mat_t TLS<sz_param, is_cplx>::H(TLS::param_t const& p) {
 	return mat_t{ {V00(p), V01(p)}, {V10(p), V11(p)} };
 }
 
 
-template <size_t ndim, bool is_cplx> typename TLS<ndim, is_cplx>::elem_t TLS<ndim, is_cplx>::H(TLS::param_t const& p, bool const& i, bool const& j) {
+template <size_t sz_param, bool is_cplx> typename TLS<sz_param, is_cplx>::elem_t TLS<sz_param, is_cplx>::H(TLS::param_t const& p, bool const& i, bool const& j) {
 	return i ? (j ? V11(p) : V10(p)) : (j ? V01(p) : V00(p));
 }
 
 
-template <size_t ndim, bool is_cplx> double TLS<ndim, is_cplx>::eigval(TLS::param_t const& p, bool const& state) {
+template <size_t sz_param, bool is_cplx> double TLS<sz_param, is_cplx>::eigval(TLS::param_t const& p, bool const& state) {
 	return d0(p) + (state ? r(p) : -r(p));
 }
 
 
-template <size_t ndim, bool is_cplx> arma::vec2 TLS<ndim, is_cplx>::eigval(TLS::param_t const& p) {
+template <size_t sz_param, bool is_cplx> arma::vec2 TLS<sz_param, is_cplx>::eigval(TLS::param_t const& p) {
 	return d0(p) + r(p) * arma::vec2{-1, 1};
 }
 
 
-template <size_t ndim, bool is_cplx> typename TLS<ndim, is_cplx>::vec_t TLS<ndim, is_cplx>::eigvec(TLS::param_t const& p, bool const& state) {
+template <size_t sz_param, bool is_cplx> typename TLS<sz_param, is_cplx>::vec_t TLS<sz_param, is_cplx>::eigvec(TLS::param_t const& p, bool const& state) {
 	return state ?
 		vec_t{
 			std::cos(theta(p)/2.0) * keep_cplx<is_cplx>( std::exp(-I * phi(p) / 2.0) ),
@@ -124,89 +120,95 @@ template <size_t ndim, bool is_cplx> typename TLS<ndim, is_cplx>::vec_t TLS<ndim
 }
 
 
-template <size_t ndim, bool is_cplx> typename TLS<ndim, is_cplx>::mat_t TLS<ndim, is_cplx>::eigvec(TLS::param_t const& p) {
+template <size_t sz_param, bool is_cplx> typename TLS<sz_param, is_cplx>::mat_t TLS<sz_param, is_cplx>::eigvec(TLS::param_t const& p) {
 	return arma::join_rows(eigvec(p,0), eigvec(p,1));
 }
 
 
-template <size_t ndim, bool is_cplx> double TLS<ndim, is_cplx>::dV00(TLS::param_t const& p, size_t const& d) {
-	return op<ndim, false>::pardiff1(V00)(p,d);
+template <size_t sz_param, bool is_cplx> double TLS<sz_param, is_cplx>::dV00(TLS::param_t const& p, size_t const& d) {
+	return op<sz_param, false>::pardiff1(V00)(p,d);
 }
 
 
-template <size_t ndim, bool is_cplx> double TLS<ndim, is_cplx>::dV11(TLS::param_t const& p, size_t const& d) {
-	return op<ndim, false>::pardiff1(V11)(p,d);
+template <size_t sz_param, bool is_cplx> double TLS<sz_param, is_cplx>::dV11(TLS::param_t const& p, size_t const& d) {
+	return op<sz_param, false>::pardiff1(V11)(p,d);
 }
 
 
-template <size_t ndim, bool is_cplx> typename TLS<ndim, is_cplx>::elem_t TLS<ndim, is_cplx>::dV01(TLS::param_t const& p, size_t const& d) {
-	return op<ndim, is_cplx>::pardiff1(V01)(p,d);
+template <size_t sz_param, bool is_cplx> typename TLS<sz_param, is_cplx>::elem_t TLS<sz_param, is_cplx>::dV01(TLS::param_t const& p, size_t const& d) {
+	return op<sz_param, is_cplx>::pardiff1(V01)(p,d);
 }
 
 
-template <size_t ndim, bool is_cplx> typename TLS<ndim, is_cplx>::elem_t TLS<ndim, is_cplx>::dV10(TLS::param_t const& p, size_t const& d) {
-	return op<ndim, is_cplx>::pardiff1(V10)(p,d);
+template <size_t sz_param, bool is_cplx> typename TLS<sz_param, is_cplx>::elem_t TLS<sz_param, is_cplx>::dV10(TLS::param_t const& p, size_t const& d) {
+	return op<sz_param, is_cplx>::pardiff1(V10)(p,d);
 }
 
 
-template <size_t ndim, bool is_cplx> typename TLS<ndim,is_cplx>::param_t TLS<ndim, is_cplx>::dV00(TLS::param_t const& p) {
-	return op<ndim, false>::diff1(V00)(p);
+template <size_t sz_param, bool is_cplx> typename TLS<sz_param,is_cplx>::param_t TLS<sz_param, is_cplx>::dV00(TLS::param_t const& p) {
+	return op<sz_param, false>::diff1(V00)(p);
 }
 
 
-template <size_t ndim, bool is_cplx> typename TLS<ndim,is_cplx>::param_t TLS<ndim, is_cplx>::dV11(TLS::param_t const& p) {
-	return op<ndim, false>::diff1(V11)(p);
+template <size_t sz_param, bool is_cplx> typename TLS<sz_param,is_cplx>::param_t TLS<sz_param, is_cplx>::dV11(TLS::param_t const& p) {
+	return op<sz_param, false>::diff1(V11)(p);
 }
 
 
-template <size_t ndim, bool is_cplx> typename TLS<ndim,is_cplx>::elems_t TLS<ndim, is_cplx>::dV01(TLS::param_t const& p) {
-	return op<ndim, is_cplx>::diff1(V01)(p);
+template <size_t sz_param, bool is_cplx> typename TLS<sz_param,is_cplx>::elems_t TLS<sz_param, is_cplx>::dV01(TLS::param_t const& p) {
+	return op<sz_param, is_cplx>::diff1(V01)(p);
 }
 
 
-template <size_t ndim, bool is_cplx> typename TLS<ndim,is_cplx>::elems_t TLS<ndim, is_cplx>::dV10(TLS::param_t const& p) {
-	return op<ndim, is_cplx>::diff1(V10)(p);
+template <size_t sz_param, bool is_cplx> typename TLS<sz_param,is_cplx>::elems_t TLS<sz_param, is_cplx>::dV10(TLS::param_t const& p) {
+	return op<sz_param, is_cplx>::diff1(V10)(p);
 }
 
 
-template <size_t ndim, bool is_cplx> typename TLS<ndim, is_cplx>::mat_t TLS<ndim, is_cplx>::dH(TLS::param_t const& p, size_t const& d) {
+template <size_t sz_param, bool is_cplx> typename TLS<sz_param, is_cplx>::mat_t TLS<sz_param, is_cplx>::dH(TLS::param_t const& p, size_t const& d) {
 	return mat_t{ {dV00(p,d), dV01(p,d)}, {dV10(p,d), dV11(p,d)} };
 }
 
 
-template <size_t ndim, bool is_cplx> typename TLS<ndim, is_cplx>::cube_t TLS<ndim, is_cplx>::dH(TLS::param_t const& p) {
+template <size_t sz_param, bool is_cplx> typename TLS<sz_param, is_cplx>::cube_t TLS<sz_param, is_cplx>::dH(TLS::param_t const& p) {
 	cube_t c2;
-	for (size_t d = 0; d != ndim; ++d)
+	for (size_t d = 0; d != sz_param; ++d)
 		c2.slice(d) = dV(p,d);
 	return c2;
 }
 
 
-template <size_t ndim, bool is_cplx> double TLS<ndim, is_cplx>::F(TLS::param_t const& p, bool const& state, size_t const& d) {
-	return std::real(eigvec(p, state).t() * dH(p,d) * eigvec(p, state));
+template <size_t sz_param, bool is_cplx> double TLS<sz_param, is_cplx>::F(TLS::param_t const& p, bool const& state, size_t const& i) {
+	return - ( op<sz_param, false>::pardiff1(d0)(p,i) + (state ? 1 : -1) * op<sz_param, false>::pardiff1(r)(p,i) );
+	//return std::real(eigvec(p, state).t() * dH(p,i) * eigvec(p, state));
 }
 
 
-template <size_t ndim, bool is_cplx> typename TLS<ndim, is_cplx>::param_t TLS<ndim, is_cplx>::F(TLS::param_t const& p, bool const& state) {
-	param_t force;
-	for (size_t d = 0; d != ndim; ++d)
-		force(d) = F(p, state, d);
-	return force;
+template <size_t sz_param, bool is_cplx> typename TLS<sz_param, is_cplx>::param_t TLS<sz_param, is_cplx>::F(TLS::param_t const& p, bool const& state) {
+	return - ( op<sz_param, false>::diff1(d0)(p) + (state ? 1 : -1) * op<sz_param, false>::diff1(r)(p) );
+	//param_t force;
+	//for (size_t i = 0; i != sz_param; ++i)
+	//	force(i) = F(p, state, i);
+	//return force;
 }
 
 
-template <size_t ndim, bool is_cplx> typename TLS<ndim, is_cplx>::elem_t TLS<ndim, is_cplx>::drvcpl(TLS::param_t const& p, bool const& i, bool const& j, size_t const& d) {
+template <size_t sz_param, bool is_cplx> typename TLS<sz_param, is_cplx>::elem_t TLS<sz_param, is_cplx>::drvcpl(TLS::param_t const& p, bool const& i, bool const& j, size_t const& d) {
 	return keep_cplx<is_cplx>( (i==j) ? 
-			( (i ? -1 : 1) * 0.5 * I * std::cos(theta(p)) * op<ndim,false>::pardiff1(phi)(p,d) ) :
-			squeeze<elem_t,1,1>(eigvec(p,i).t() * dH(p,d) * eigvec(p,j) / ( eigval(p,j) - eigval(p,i) )) );
+			( (i ? -1 : 1) * 0.5 * I * std::cos(theta(p)) * op<sz_param, false>::pardiff1(phi)(p,d) ) :
+			0.5 * ( (i ? -1 : 1) * op<sz_param, false>::pardiff1(theta)(p,d) + I * std::sin(theta(p)) * op<sz_param, false>::pardiff1(phi)(p,d) ) );
+			//squeeze<elem_t,1,1>(eigvec(p,i).t() * dH(p,d) * eigvec(p,j) / ( eigval(p,j) - eigval(p,i) )) );
 }
 
 
-template <size_t ndim, bool is_cplx> typename TLS<ndim, is_cplx>::elems_t TLS<ndim, is_cplx>::drvcpl(TLS::param_t const& p, bool const& i, bool const& j) {
-	elems_t dc;
-	for (size_t d = 0; d != ndim; ++d)
-		dc(d) = drvcpl(p, i, j, d);
-	return dc;
+template <size_t sz_param, bool is_cplx> typename TLS<sz_param, is_cplx>::elems_t TLS<sz_param, is_cplx>::drvcpl(TLS::param_t const& p, bool const& i, bool const& j) {
+	return (i==j) ? 
+		( (i ? -1 : 1) * 0.5 * keep_cplx<is_cplx>(I) * std::cos(theta(p)) * op<sz_param, false>::diff1(phi)(p) ) :
+		0.5 * ( (i ? -1 : 1) * op<sz_param, false>::diff1(theta)(p) + keep_cplx<is_cplx>(I) * std::sin(theta(p)) * op<sz_param, false>::diff1(phi)(p) );
+	//elems_t dc;
+	//for (size_t d = 0; d != sz_param; ++d)
+	//	dc(d) = drvcpl(p, i, j, d);
+	//return dc;
 }
 
 
