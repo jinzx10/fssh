@@ -6,52 +6,80 @@
 #include <complex>
 #include <functional>
 
+
 extern std::complex<double> const I;
 extern double const PI;
 extern double const DELTA;
 
+
 template <typename ...> using void_t = void;
 template <bool is_cplx = false> using num_t = typename std::conditional<is_cplx, std::complex<double>, double>::type;
 
-template <bool is_cplx> typename std::enable_if<is_cplx, std::complex<double>>::type keep_cplx(std::complex<double> const& z) { return z; }
-template <bool is_cplx> typename std::enable_if<!is_cplx, double>::type keep_cplx(std::complex<double> const& z) { return z.real(); }
 
-template <typename T, size_t ndim> typename std::enable_if<(ndim==1), T>::type decay(typename arma::Col<T>::template fixed<1> const& zv) { return zv(0); }
-template <typename T, size_t ndim> typename std::enable_if<(ndim!=1), typename arma::Col<T>::template fixed<ndim>>::type decay(typename arma::Col<T>::template fixed<ndim> const& zv) { return zv; }
-template <typename T, size_t ndim1, size_t ndim2> typename std::enable_if<ndim1==1 && ndim2==1, T>::type decay(typename arma::Mat<T>::template fixed<1,1> const& zv) { return zv(0,0); }
-template <typename T, size_t ndim1, size_t ndim2> typename std::enable_if<ndim1!=1 || ndim2!=1, typename arma::Mat<T>::template fixed<ndim1,ndim2>>::type decay(typename arma::Mat<T>::template fixed<ndim1,ndim2> const& zv) { return zv; }
+template <bool is_cplx> num_t<is_cplx> keep_cplx(std::complex<double> const& z) { return z; }
+template <>  num_t<false> keep_cplx<false>(std::complex<double> const& z) { return z.real(); }
 
 
-template <size_t ndim> arma::Col<double>::fixed<ndim> pt(arma::Col<double>::fixed<ndim> x, size_t const& d, double const& dx) { x[d] += dx; return x; }
-template <size_t> double pt(double x, size_t const& d, double const& dx) { return x+dx; }
+template <typename T, size_t sz> typename std::enable_if<(sz==1), T>::type squeeze(typename arma::Col<T>::template fixed<1> const& zv) { return zv(0); }
+template <typename T, size_t sz> typename std::enable_if<(sz!=1), typename arma::Col<T>::template fixed<sz> >::type squeeze(typename arma::Col<T>::template fixed<sz> const& zv) { return zv; }
 
-template < size_t ndim = 1, bool is_cplx = false >
-struct Diff {
-	using Val			= typename std::conditional< is_cplx, std::complex<double>, double >::type;
-	using Params		= typename std::conditional< (ndim==1), double, arma::Col<double>::fixed<ndim> >::type;
-	using Vals			= typename std::conditional< (ndim==1), Val, typename arma::Col<Val>::template fixed<ndim> >::type;
 
-	using Input			= std::function<Val(Params)>;
-	using Output1		= std::function<Val(Params, size_t)>;
-	using Output2		= std::function<Vals(Params)>;
+template <size_t sz> arma::Col<double>::fixed<sz> pt(arma::Col<double>::fixed<sz> x, size_t const& i, double const& dx) { x[i] += dx; return x; }
+template <size_t> double pt(double x, size_t const& i, double const& dx) { return x+dx; }
 
-	static Output1		pdiff(Input const& f) {
-		return [f] (Params const& x, size_t const& d) -> Val {
-			return (-f(pt<ndim>(x,d,-3.0*DELTA))/60.0 + 3.0*f(pt<ndim>(x,d,-2.0*DELTA))/20.0 - 3.0*f(pt<ndim>(x,d,-DELTA))/4.0
-					+f(pt<ndim>(x,d,+3.0*DELTA))/60.0 - 3.0*f(pt<ndim>(x,d,+2.0*DELTA))/20.0 + 3.0*f(pt<ndim>(x,d,+DELTA))/4.0) / DELTA;
+
+template < size_t sz_vec = 2, size_t sz_param = 1, bool is_cplx = false >
+struct data_type
+{
+	using elem_t		= num_t<is_cplx>;
+	using param_t		= typename std::conditional< (sz_param==1), double, arma::Col<double>::fixed<sz_param> >::type;
+	using vec_t			= typename arma::Col<elem_t>::template fixed<sz_vec>;
+	using mat_t			= typename arma::Mat<elem_t>::template fixed<sz_vec, sz_vec>;
+	using cube_t		= typename arma::Cube<elem_t>::template fixed<sz_vec, sz_vec, sz_vec>;
+	using elems_t		= typename std::conditional< (sz_param==1), elem_t, typename arma::Col<elem_t>::template fixed<sz_param> >::type;
+
+	using param2b		= std::function<bool(param_t)>;
+	using param2d		= std::function<double(param_t)>;
+	using param2e		= std::function<elem_t(param_t)>;
+	using param2p		= std::function<param_t(param_t)>;
+	using param2es		= std::function<elems_t(param_t)>;
+	using paramidx2d	= std::function<double(param_t, size_t)>;
+	using paramidx2e	= std::function<elem_t(param_t, size_t)>;
+};
+
+
+template < size_t sz_param = 1, bool is_cplx = false >
+struct op : public data_type<0, sz_param, is_cplx>
+{
+	using typename data_type<0, sz_param, is_cplx>::elem_t;
+	using typename data_type<0, sz_param, is_cplx>::param_t;
+	using typename data_type<0, sz_param, is_cplx>::elems_t;
+	using typename data_type<0, sz_param, is_cplx>::param2e;
+	using typename data_type<0, sz_param, is_cplx>::paramidx2e;
+	using typename data_type<0, sz_param, is_cplx>::param2es;
+
+	static paramidx2e		pardiff1(param2e const& f) {
+		return [f] (param_t const& x, size_t const& i) -> elem_t {
+			return (-f(pt<sz_param>(x,i,-3.0*DELTA))/60.0 + 3.0*f(pt<sz_param>(x,i,-2.0*DELTA))/20.0 - 3.0*f(pt<sz_param>(x,i,-DELTA))/4.0
+					+f(pt<sz_param>(x,i,+3.0*DELTA))/60.0 - 3.0*f(pt<sz_param>(x,i,+2.0*DELTA))/20.0 + 3.0*f(pt<sz_param>(x,i,+DELTA))/4.0) / DELTA;
 		};
 	}
 
-	static Output2		diff(Input const& f) {
-		return [f] (Params const& p) -> Vals {
-			auto df = pdiff(f);
-			typename arma::Col<Val>::template fixed<ndim> vals;
-			for (size_t i = 0; i != ndim; ++i)
-				vals(i) = df(p,i);
-			return decay<Val, ndim>(vals);
+	static param2es			diff1(param2e const& f) {
+		return [f] (param_t const& x) -> elems_t {
+			typename arma::Col<elem_t>::template fixed<sz_param> vals;
+			for (size_t i = 0; i != sz_param; ++i)
+				vals(i) = pardiff1(f)(x,i);
+			return squeeze<elem_t, sz_param>(vals);
 		};
 	}
 };
+
+
+
+//template <typename T, size_t ndim1, size_t ndim2> typename std::enable_if<ndim1==1 && ndim2==1, T>::type decay(typename arma::Mat<T>::template fixed<1,1> const& zv) { return zv(0,0); }
+//template <typename T, size_t ndim1, size_t ndim2> typename std::enable_if<ndim1!=1 || ndim2!=1, typename arma::Mat<T>::template fixed<ndim1,ndim2>>::type decay(typename arma::Mat<T>::template fixed<ndim1,ndim2> const& zv) { return zv; }
+
 
 //void set_max_real_positive(arma::cx_vec& col);
 //arma::cx_mat pure_denmat(arma::uword sz);
