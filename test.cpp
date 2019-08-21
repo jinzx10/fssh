@@ -64,75 +64,73 @@ int main() {
 	////////////////////////////////////////
 	//				diff
 	////////////////////////////////////////
+	
 	std::cout << "   test diff start" << std::endl;
 
+	double tol = 1e-10; // error tolerance
+
 	auto f = [](double x) {return x*x-3*x;};
-	auto df = op<1,false>::pardiff1(f);
-	auto df2 = op<1,false>::diff1(f);
+	auto df = [](double x) {return 2*x-3;};
 
-	auto g = [](double x) {return std::sin(x)-std::exp(I*PI*x/2.0);};
-	auto dg = op<1,true>::pardiff1(g);
-	auto dg2 = op<1,true>::diff1(g);
+	double x1 = 1.2, x2 = -3.5;
+	std::cout << (std::abs(op<1,false>::pardiff1(f)(x1,0) - df(x1)) < tol) << std::endl;
+	std::cout << (std::abs(op<1,false>::pardiff1(f)(x2,0) - df(x2)) < tol) << std::endl;
 
-	double xt1 = 1.2, xt2 = -3.5;
-	std::cout << (std::abs(2*xt1-3 - df(xt1,0)) < DELTA) << std::endl;
-	std::cout << (std::abs(2*xt2-3 - df(xt2,0)) < DELTA) << std::endl;
-	std::cout << (std::abs(std::cos(xt1)-I*PI/2.0*std::exp(I*PI*xt1/2.0) - dg(xt1,0)) < DELTA) << std::endl;
-	std::cout << (std::abs(std::cos(xt2)-I*PI/2.0*std::exp(I*PI*xt2/2.0) - dg(xt2,0)) < DELTA) << std::endl;
+	auto g = [](double x) {return std::sin(x) - std::exp(I*PI*x/2.0);};
+	auto dg = [](double x) {return std::cos(x) - I * PI / 2.0 * std::exp(I*PI*x/2.0);}; 
 
-	std::cout << std::abs(2*xt1-3 - df(xt1,0)) << std::endl;
-	std::cout << std::abs(2*xt2-3 - df(xt2,0)) << std::endl;
-	std::cout << std::abs(std::cos(xt1)-I*PI/2.0*std::exp(I*PI*xt1/2.0) - dg(xt1,0)) << std::endl;
-	std::cout << std::abs(std::cos(xt2)-I*PI/2.0*std::exp(I*PI*xt2/2.0) - dg(xt2,0)) << std::endl;
-	std::cout << df2(xt1) << std::endl;
-	std::cout << df2(xt2) << std::endl;
-	std::cout << dg2(xt1) << std::endl;
-	std::cout << dg2(xt2) << std::endl;
+	std::cout << (std::abs(op<1,true>::pardiff1(g)(x1,0) - dg(x1)) < tol) << std::endl;
+	std::cout << (std::abs(op<1,true>::pardiff1(g)(x2,0) - dg(x2)) < tol) << std::endl;
 
-	auto h = [](arma::vec3 x) {return std::sqrt( std::pow(x(0),2) + std::pow(x(1),2) + std::pow(x(2),2) );};
-	auto dh = op<3,false>::pardiff1(h);
-	auto dh2 = op<3,false>::diff1(h);
+	arma::vec3 v1 = {1.1, 2.2, -0.5}, v2 = {0, -0.8, 0};
+	auto h = [](arma::vec3 x) {return std::pow(x(0)+x(1),2) - x(1) * x(2); };
+	auto dh = [](arma::vec3 x) {return arma::vec3{2*(x(0)+x(1)), 2*(x(0)+x(1))-x(2), -x(1)};};
 
-	auto l = [](arma::vec2 y) {return std::exp(I*y(0)*y(1)); };
-	auto dl = op<2,true>::pardiff1(l);
-	auto dl2 = op<2,true>::diff1(l);
-
-	arma::vec3 xt3 = {0.8, 4.9, 3.7};
-	std::cout << ( std::abs( xt3(1)/h(xt3) - dh(xt3,1) ) < DELTA ) << std::endl;
-	std::cout << std::abs( xt3(1)/h(xt3) - dh(xt3,1) ) << std::endl;
-	std::cout << dh2(xt3) << std::endl;
-
-	arma::vec2 xt4 = {0.9, 1.3};
-	std::cout << ( std::abs( I*xt4(0)*l(xt4)  - dl(xt4,1) ) < DELTA ) << std::endl;
-	std::cout << std::abs( I*xt4(0)*l(xt4)  - dl(xt4,1) ) << std::endl;
-	std::cout << dl2(xt4) << std::endl;
-
-	std::cout << "   test diff end" << std::endl;
+	std::cout << (arma::norm(op<3,false>::diff1(h)(v1) - dh(v1)) < tol) << std::endl;
+	std::cout << (arma::norm(op<3,false>::diff1(h)(v2) - dh(v2)) < tol) << std::endl;
 
 
-	////////////////////////////////////////
-	//				TLS
-	////////////////////////////////////////
-	std::cout << "   test TLS start" << std::endl;
 
-	TLS<1, false> tls(V00, V11, V01);
-	TLS<1, true> tls_cplx(V00, V11, V01_cplx);
-
-	std::cout << tls.eigvec(1) << std::endl;
-	std::cout << tls.drvcpl(1,1,1,0) << std::endl;
-	std::cout << tls_cplx.eigvec(1) << std::endl;
-	std::cout << tls_cplx.drvcpl(1,0,0,0) << std::endl;
-
-	//std::cout << tls.V01(0.2) << std::endl;
-	//std::cout << tls.V10(0.2) << std::endl;
-
-	//tls.V(0.2).print();
-
-	//tls.eigval(0.2).print();
-
-	//tls.eigvec(0.2).print();
-
-	//auto g = diff(V00);
-	//std::cout << g(0.02) << std::endl;
+//	auto l = [](arma::vec2 y) {return std::exp(I*y(0)*y(1)); };
+//	auto dl = op<2,true>::pardiff1(l);
+//	auto dl2 = op<2,true>::diff1(l);
+//
+//	arma::vec3 xt3 = {0.8, 4.9, 3.7};
+//	std::cout << ( std::abs( xt3(1)/h(xt3) - dh(xt3,1) ) < DELTA ) << std::endl;
+//	std::cout << std::abs( xt3(1)/h(xt3) - dh(xt3,1) ) << std::endl;
+//	std::cout << dh2(xt3) << std::endl;
+//
+//	arma::vec2 xt4 = {0.9, 1.3};
+//	std::cout << ( std::abs( I*xt4(0)*l(xt4)  - dl(xt4,1) ) < DELTA ) << std::endl;
+//	std::cout << std::abs( I*xt4(0)*l(xt4)  - dl(xt4,1) ) << std::endl;
+//	std::cout << dl2(xt4) << std::endl;
+//
+//	std::cout << "   test diff end" << std::endl;
+//
+//
+//	////////////////////////////////////////
+//	//				TLS
+//	////////////////////////////////////////
+//	std::cout << "   test TLS start" << std::endl;
+//
+//	TLS<1, false> tls(V00, V11, V01);
+//	TLS<1, true> tls_cplx(V00, V11, V01_cplx);
+//
+//	std::cout << tls.eigvec(1) << std::endl;
+//	std::cout << tls.drvcpl(1,1,1,0) << std::endl;
+//	std::cout << tls_cplx.eigvec(1) << std::endl;
+//	std::cout << tls_cplx.drvcpl(1,0,0,0) << std::endl;
+//
+//	//std::cout << tls.V01(0.2) << std::endl;
+//	//std::cout << tls.V10(0.2) << std::endl;
+//
+//	//tls.V(0.2).print();
+//
+//	//tls.eigval(0.2).print();
+//
+//	//tls.eigvec(0.2).print();
+//
+//	//auto g = diff(V00);
+//	//std::cout << g(0.02) << std::endl;
 	return 0;
 }

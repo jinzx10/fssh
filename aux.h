@@ -16,8 +16,7 @@ template <typename ...> using void_t = void;
 template <bool is_cplx = false> using num_t = typename std::conditional<is_cplx, std::complex<double>, double>::type;
 
 
-template <bool is_cplx> num_t<is_cplx> keep_cplx(std::complex<double> const& z) { return z; }
-template <>  num_t<false> keep_cplx<false>(std::complex<double> const& z) { return z.real(); }
+template <bool is_cplx> num_t<is_cplx> keep_cplx(std::complex<double> const& z) { return z; } // specialized in aux.cpp
 
 
 template <typename T, size_t sz> typename std::enable_if<(sz==1), T>::type squeeze(typename arma::Col<T>::template fixed<1> const& zv) { return zv(0); }
