@@ -2,9 +2,6 @@
 #define __TWO_LEVEL_SYSTEM_H__
 
 #include "aux.h"
-#include <type_traits>
-#include <complex>
-#include <armadillo>
 
 template < size_t sz_param = 1, bool is_cplx = false >
 class TLS : public data_type<2, sz_param, is_cplx>
@@ -19,6 +16,8 @@ class TLS : public data_type<2, sz_param, is_cplx>
 		using typename data_type<2, sz_param, is_cplx>::param2d;
 		using typename data_type<2, sz_param, is_cplx>::param2e;
 		using typename data_type<2, sz_param, is_cplx>::param2b;
+		using typename data_type<2, sz_param, is_cplx>::paramidx2d;
+		using typename data_type<2, sz_param, is_cplx>::param2p;
 
 		TLS(
 				param2d			V00_,
@@ -58,6 +57,16 @@ class TLS : public data_type<2, sz_param, is_cplx>
 		param2d				theta;
 		param2d				phi;
 
+		paramidx2d			pardiff_d0;
+		paramidx2d			pardiff_r;
+		paramidx2d			pardiff_theta;
+		paramidx2d			pardiff_phi;
+
+		param2p				diff_d0;
+		param2p				diff_r;
+		param2p				diff_theta;
+		param2p				diff_phi;
+
 		static bool			always(param_t const&) { return true; }
 };
 
@@ -72,30 +81,39 @@ template <size_t sz_param, bool is_cplx> TLS<sz_param, is_cplx>::TLS( param2d V0
 	r = [this](param_t const& p) -> double { return std::sqrt( std::pow(dx(p),2) + std::pow(dy(p),2) + std::pow(dz(p),2) ); };
 	theta = [this](param_t const& p) -> double { return std::acos( dz(p) / r(p) ); };
 	phi = [this](param_t const& p) -> double { double phi0 = std::acos( dx(p) / std::sqrt(std::pow(dx(p),2) + std::pow(dy(p),2)) ); return dy(p) > 0 ? phi0 : (2*PI - phi0); };
+
+	pardiff_d0 = op<sz_param, false>::pardiff1(d0);
+	pardiff_r = op<sz_param, false>::pardiff1(r);
+	pardiff_theta = op<sz_param, false>::pardiff1(theta);
+	pardiff_phi = op<sz_param, false>::pardiff1(phi);
+	diff_d0 = op<sz_param, false>::diff1(d0);
+	diff_r = op<sz_param, false>::diff1(r);
+	diff_theta = op<sz_param, false>::diff1(theta);
+	diff_phi = op<sz_param, false>::diff1(phi);
 }
 
 
-template <size_t sz_param, bool is_cplx> typename TLS<sz_param, is_cplx>::mat_t TLS<sz_param, is_cplx>::H(TLS::param_t const& p) {
+template <size_t sz_param, bool is_cplx> typename TLS<sz_param, is_cplx>::mat_t TLS<sz_param, is_cplx>::H(param_t const& p) {
 	return mat_t{ {V00(p), V01(p)}, {V10(p), V11(p)} };
 }
 
 
-template <size_t sz_param, bool is_cplx> typename TLS<sz_param, is_cplx>::elem_t TLS<sz_param, is_cplx>::H(TLS::param_t const& p, bool const& i, bool const& j) {
+template <size_t sz_param, bool is_cplx> typename TLS<sz_param, is_cplx>::elem_t TLS<sz_param, is_cplx>::H(param_t const& p, bool const& i, bool const& j) {
 	return i ? (j ? V11(p) : V10(p)) : (j ? V01(p) : V00(p));
 }
 
 
-template <size_t sz_param, bool is_cplx> double TLS<sz_param, is_cplx>::eigval(TLS::param_t const& p, bool const& state) {
-	return d0(p) + (state ? r(p) : -r(p));
+template <size_t sz_param, bool is_cplx> double TLS<sz_param, is_cplx>::eigval(param_t const& p, bool const& state) {
+	return d0(p) + pm(state) * r(p);
 }
 
 
-template <size_t sz_param, bool is_cplx> arma::vec2 TLS<sz_param, is_cplx>::eigval(TLS::param_t const& p) {
+template <size_t sz_param, bool is_cplx> arma::vec2 TLS<sz_param, is_cplx>::eigval(param_t const& p) {
 	return d0(p) + r(p) * arma::vec2{-1, 1};
 }
 
 
-template <size_t sz_param, bool is_cplx> typename TLS<sz_param, is_cplx>::vec_t TLS<sz_param, is_cplx>::eigvec(TLS::param_t const& p, bool const& state) {
+template <size_t sz_param, bool is_cplx> typename TLS<sz_param, is_cplx>::vec_t TLS<sz_param, is_cplx>::eigvec(param_t const& p, bool const& state) {
 	return state ?
 		vec_t{
 			std::cos(theta(p)/2.0) * keep_cplx<is_cplx>( std::exp(-I * phi(p) / 2.0) ),
@@ -108,32 +126,34 @@ template <size_t sz_param, bool is_cplx> typename TLS<sz_param, is_cplx>::vec_t 
 }
 
 
-template <size_t sz_param, bool is_cplx> typename TLS<sz_param, is_cplx>::mat_t TLS<sz_param, is_cplx>::eigvec(TLS::param_t const& p) {
+template <size_t sz_param, bool is_cplx> typename TLS<sz_param, is_cplx>::mat_t TLS<sz_param, is_cplx>::eigvec(param_t const& p) {
 	return arma::join_rows(eigvec(p,0), eigvec(p,1));
 }
 
 
-template <size_t sz_param, bool is_cplx> double TLS<sz_param, is_cplx>::F(TLS::param_t const& p, bool const& state, size_t const& i) {
-	return - ( op<sz_param, false>::pardiff1(d0)(p,i) + (state ? 1 : -1) * op<sz_param, false>::pardiff1(r)(p,i) );
+template <size_t sz_param, bool is_cplx> double TLS<sz_param, is_cplx>::F(param_t const& p, bool const& state, size_t const& ip) {
+	return - ( pardiff_d0(p, ip) + pm(state) * pardiff_r(p, ip) );
 }
 
 
-template <size_t sz_param, bool is_cplx> typename TLS<sz_param, is_cplx>::param_t TLS<sz_param, is_cplx>::F(TLS::param_t const& p, bool const& state) {
-	return - ( op<sz_param, false>::diff1(d0)(p) + (state ? 1 : -1) * op<sz_param, false>::diff1(r)(p) );
+template <size_t sz_param, bool is_cplx> typename TLS<sz_param, is_cplx>::param_t TLS<sz_param, is_cplx>::F(param_t const& p, bool const& state) {
+	return - ( diff_d0(p) + pm(state) * diff_r(p) );
 }
 
 
-template <size_t sz_param, bool is_cplx> typename TLS<sz_param, is_cplx>::elem_t TLS<sz_param, is_cplx>::drvcpl(TLS::param_t const& p, bool const& i, bool const& j, size_t const& d) {
-	return keep_cplx<is_cplx>( (i==j) ? 
-			( (i ? -1 : 1) * 0.5 * I * std::cos(theta(p)) * op<sz_param, false>::pardiff1(phi)(p,d) ) :
-			0.5 * ( (i ? -1 : 1) * op<sz_param, false>::pardiff1(theta)(p,d) + I * std::sin(theta(p)) * op<sz_param, false>::pardiff1(phi)(p,d) ) );
-}
-
-
-template <size_t sz_param, bool is_cplx> typename TLS<sz_param, is_cplx>::elems_t TLS<sz_param, is_cplx>::drvcpl(TLS::param_t const& p, bool const& i, bool const& j) {
+template <size_t sz_param, bool is_cplx> typename TLS<sz_param, is_cplx>::elem_t TLS<sz_param, is_cplx>::drvcpl(param_t const& p, bool const& i, bool const& j, size_t const& ip) {
 	return (i==j) ? 
-		( (i ? -1 : 1) * 0.5 * keep_cplx<is_cplx>(I) * std::cos(theta(p)) * op<sz_param, false>::diff1(phi)(p) ) :
-		0.5 * ( (i ? -1 : 1) * op<sz_param, false>::diff1(theta)(p) + keep_cplx<is_cplx>(I) * std::sin(theta(p)) * op<sz_param, false>::diff1(phi)(p) );
+		( is_cplx ? -0.5 * pm(i)  * keep_cplx<is_cplx>(I) * std::cos(theta(p)) * pardiff_phi(p,ip) : 0.0 ) :
+		( is_cplx ? -0.5 * ( pm(i) * pardiff_theta(p,ip) + keep_cplx<is_cplx>(I) * std::sin(theta(p)) * pardiff_phi(p,ip) ) : 
+					-0.5 * pm(i) * pardiff_theta(p,ip) );
+}
+
+
+template <size_t sz_param, bool is_cplx> typename TLS<sz_param, is_cplx>::elems_t TLS<sz_param, is_cplx>::drvcpl(param_t const& p, bool const& i, bool const& j) {
+	return (i==j) ?
+		( is_cplx ? -0.5 * pm(i) * keep_cplx<is_cplx>(I) * std::cos(theta(p)) * diff_phi(p) : zeros<elems_t>() ) :
+		( is_cplx ? -0.5 * ( pm(i) * diff_theta(p) + keep_cplx<is_cplx>(I) * std::sin(theta(p)) * diff_phi(p) ) :
+					-0.5 * pm(i) * diff_theta(p) );
 }
 
 

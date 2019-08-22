@@ -89,48 +89,38 @@ int main() {
 	std::cout << (arma::norm(op<3,false>::diff1(h)(v1) - dh(v1)) < tol) << std::endl;
 	std::cout << (arma::norm(op<3,false>::diff1(h)(v2) - dh(v2)) < tol) << std::endl;
 
+	auto l = [](arma::vec3 x) { return std::exp(I*x(0)*x(1)) + std::cos(I*x(2)); };
+	auto dl = [](arma::vec3 x) { return arma::cx_vec3{ I*x(1)*std::exp(I*x(0)*x(1)), I*x(0)*std::exp(I*x(0)*x(1)), -I*std::sin(I*x(2))  }; };
+
+	std::cout << (arma::norm(op<3,true>::diff1(l)(v1) - dl(v1)) < tol) << std::endl;
+	std::cout << (arma::norm(op<3,true>::diff1(l)(v2) - dl(v2)) < tol) << std::endl;
+
+	std::cout << "   test diff end" << std::endl;
+
+	////////////////////////////////////////
+	//				TLS
+	////////////////////////////////////////
+	std::cout << "   test TLS start" << std::endl;
+
+	TLS<1, false> tls(V00, V11, V01);
+	size_t nx = 1000;
+	arma::mat E(nx, 3), drvcpl(nx, 2);
+	E.col(0) = arma::linspace<arma::vec>(-10,10,nx);
+	drvcpl.col(0) = arma::linspace<arma::vec>(-10,10,nx);
+
+	for (size_t i = 0; i != nx; ++i) {
+		E(i, arma::span(1,2)) = tls.eigval(E(i,0)).t();
+		drvcpl(i, 1) = tls.drvcpl(E(i,0),0,1);
+	}
+
+	E.save("E.txt", arma::raw_ascii);
+	drvcpl.save("drvcpl.txt", arma::raw_ascii);
+
+	TLS<1, true> tls_cplx(V00, V11, V01_cplx);
 
 
-//	auto l = [](arma::vec2 y) {return std::exp(I*y(0)*y(1)); };
-//	auto dl = op<2,true>::pardiff1(l);
-//	auto dl2 = op<2,true>::diff1(l);
-//
-//	arma::vec3 xt3 = {0.8, 4.9, 3.7};
-//	std::cout << ( std::abs( xt3(1)/h(xt3) - dh(xt3,1) ) < DELTA ) << std::endl;
-//	std::cout << std::abs( xt3(1)/h(xt3) - dh(xt3,1) ) << std::endl;
-//	std::cout << dh2(xt3) << std::endl;
-//
-//	arma::vec2 xt4 = {0.9, 1.3};
-//	std::cout << ( std::abs( I*xt4(0)*l(xt4)  - dl(xt4,1) ) < DELTA ) << std::endl;
-//	std::cout << std::abs( I*xt4(0)*l(xt4)  - dl(xt4,1) ) << std::endl;
-//	std::cout << dl2(xt4) << std::endl;
-//
-//	std::cout << "   test diff end" << std::endl;
-//
-//
-//	////////////////////////////////////////
-//	//				TLS
-//	////////////////////////////////////////
-//	std::cout << "   test TLS start" << std::endl;
-//
-//	TLS<1, false> tls(V00, V11, V01);
-//	TLS<1, true> tls_cplx(V00, V11, V01_cplx);
-//
-//	std::cout << tls.eigvec(1) << std::endl;
-//	std::cout << tls.drvcpl(1,1,1,0) << std::endl;
-//	std::cout << tls_cplx.eigvec(1) << std::endl;
-//	std::cout << tls_cplx.drvcpl(1,0,0,0) << std::endl;
-//
-//	//std::cout << tls.V01(0.2) << std::endl;
-//	//std::cout << tls.V10(0.2) << std::endl;
-//
-//	//tls.V(0.2).print();
-//
-//	//tls.eigval(0.2).print();
-//
-//	//tls.eigvec(0.2).print();
-//
-//	//auto g = diff(V00);
-//	//std::cout << g(0.02) << std::endl;
+//	std::cout << "   test TLS end" << std::endl;
+
+
 	return 0;
 }

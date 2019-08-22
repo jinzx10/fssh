@@ -1,22 +1,25 @@
 #ifndef __AUX_H__
 #define __AUX_H__
 
-#include <armadillo>
 #include <cmath>
 #include <complex>
 #include <functional>
-
+#include <type_traits>
+#include <armadillo>
 
 extern std::complex<double> const I;
 extern double const PI;
 extern double const DELTA;
+
+int pm(bool);
 
 
 template <typename ...> using void_t = void;
 template <bool is_cplx = false> using num_t = typename std::conditional<is_cplx, std::complex<double>, double>::type;
 
 
-template <bool is_cplx> num_t<is_cplx> keep_cplx(std::complex<double> const& z) { return z; } // specialized in aux.cpp
+template <bool is_cplx> num_t<is_cplx> keep_cplx(std::complex<double> const& z) { return z; }
+template <> num_t<false> keep_cplx<false>(std::complex<double> const& z);
 
 
 template <typename T, size_t sz> typename std::enable_if<(sz==1), T>::type squeeze(typename arma::Col<T>::template fixed<1> const& zv) { return zv(0); }
@@ -25,6 +28,10 @@ template <typename T, size_t sz> typename std::enable_if<(sz!=1), typename arma:
 
 template <size_t sz> arma::Col<double>::fixed<sz> pt(arma::Col<double>::fixed<sz> x, size_t const& i, double const& dx) { x(i) += dx; return x; }
 template <size_t> double pt(double x, size_t const& i, double const& dx) { return x+dx; }
+
+
+template <typename T> typename std::enable_if<arma::is_arma_type<T>::value, T>::type zeros() {return T(arma::fill::zeros);}
+template <typename T> typename std::enable_if<!arma::is_arma_type<T>::value, T>::type zeros() {return 0.0;}
 
 
 template < size_t sz_vec = 2, size_t sz_param = 1, bool is_cplx = false >
@@ -73,11 +80,6 @@ struct op : public data_type<0, sz_param, is_cplx>
 		};
 	}
 };
-
-
-
-//template <typename T, size_t ndim1, size_t ndim2> typename std::enable_if<ndim1==1 && ndim2==1, T>::type decay(typename arma::Mat<T>::template fixed<1,1> const& zv) { return zv(0,0); }
-//template <typename T, size_t ndim1, size_t ndim2> typename std::enable_if<ndim1!=1 || ndim2!=1, typename arma::Mat<T>::template fixed<ndim1,ndim2>>::type decay(typename arma::Mat<T>::template fixed<ndim1,ndim2> const& zv) { return zv; }
 
 
 //void set_max_real_positive(arma::cx_vec& col);
