@@ -103,6 +103,7 @@ int main() {
 	std::cout << "   test TLS start" << std::endl;
 
 	TLS<1, false> tls(V00, V11, V01);
+
 	size_t nx = 1000;
 	arma::vec xgrid = arma::linspace<arma::vec>(-10, 10, nx);
 	arma::mat E(nx, 3), drvcpl(nx, 3), F(nx, 3), berry(nx, 3);
@@ -129,7 +130,28 @@ int main() {
 
 	TLS<1, true> tls_cplx(V00, V11, V01_cplx);
 
+	arma::mat zE(nx, 3), zF(nx, 3);
+	arma::cx_mat zdrvcpl(nx, 3), zberry(nx, 3);
+	zE.col(0) = xgrid;
+	zF.col(0) = xgrid;
+	zdrvcpl.col(0) = arma::conv_to<arma::cx_vec>::from(xgrid);
+	zberry.col(0) = arma::conv_to<arma::cx_vec>::from(xgrid);
 
+	for (size_t i = 0; i != nx; ++i) {
+		double x = xgrid(i);
+		zE(i, arma::span(1,2)) = tls_cplx.eigval(x).t();
+		zdrvcpl(i, 1) = tls_cplx.drvcpl(x,0,1);
+		zdrvcpl(i, 2) = tls_cplx.drvcpl(x,1,0);
+		zberry(i,1) = tls_cplx.drvcpl(x,0,0);
+		zberry(i,1) = tls_cplx.drvcpl(x,1,1);
+		zF(i,1) = tls_cplx.F(x,0);
+		zF(i,2) = tls_cplx.F(x,1);
+	}
+
+	zE.save("zE.txt", arma::raw_ascii);
+	zdrvcpl.save("zdrvcpl.txt", arma::raw_ascii);
+	zberry.save("zberry.txt", arma::raw_ascii);
+	zF.save("zF.txt", arma::raw_ascii);
 //	std::cout << "   test TLS end" << std::endl;
 
 
