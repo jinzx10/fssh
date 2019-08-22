@@ -104,17 +104,28 @@ int main() {
 
 	TLS<1, false> tls(V00, V11, V01);
 	size_t nx = 1000;
-	arma::mat E(nx, 3), drvcpl(nx, 2);
-	E.col(0) = arma::linspace<arma::vec>(-10,10,nx);
-	drvcpl.col(0) = arma::linspace<arma::vec>(-10,10,nx);
+	arma::vec xgrid = arma::linspace<arma::vec>(-10, 10, nx);
+	arma::mat E(nx, 3), drvcpl(nx, 3), F(nx, 3), berry(nx, 3);
+	E.col(0) = xgrid;
+	drvcpl.col(0) = xgrid;
+	F.col(0) = xgrid;
+	berry.col(0) = xgrid;
 
 	for (size_t i = 0; i != nx; ++i) {
-		E(i, arma::span(1,2)) = tls.eigval(E(i,0)).t();
-		drvcpl(i, 1) = tls.drvcpl(E(i,0),0,1);
+		double x = xgrid(i);
+		E(i, arma::span(1,2)) = tls.eigval(x).t();
+		drvcpl(i, 1) = tls.drvcpl(x,0,1);
+		drvcpl(i, 2) = tls.drvcpl(x,1,0);
+		berry(i,1) = tls.drvcpl(x,0,0);
+		berry(i,1) = tls.drvcpl(x,1,1);
+		F(i,1) = tls.F(x,0);
+		F(i,2) = tls.F(x,1);
 	}
 
 	E.save("E.txt", arma::raw_ascii);
 	drvcpl.save("drvcpl.txt", arma::raw_ascii);
+	berry.save("berry.txt", arma::raw_ascii);
+	F.save("F.txt", arma::raw_ascii);
 
 	TLS<1, true> tls_cplx(V00, V11, V01_cplx);
 
