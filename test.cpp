@@ -123,10 +123,10 @@ int main() {
 		F(i,2) = tls.F(x,1);
 	}
 
-	E.save("E.txt", arma::raw_ascii);
-	drvcpl.save("drvcpl.txt", arma::raw_ascii);
-	berry.save("berry.txt", arma::raw_ascii);
-	F.save("F.txt", arma::raw_ascii);
+	E.save("data/test/E.txt", arma::raw_ascii);
+	drvcpl.save("data/test/drvcpl.txt", arma::raw_ascii);
+	berry.save("data/test/berry.txt", arma::raw_ascii);
+	F.save("data/test/F.txt", arma::raw_ascii);
 
 	TLS<1, true> tls_cplx(V00, V11, V01_cplx);
 
@@ -148,10 +148,10 @@ int main() {
 		zF(i,2) = tls_cplx.F(x,1);
 	}
 
-	zE.save("zE.txt", arma::raw_ascii);
-	zdrvcpl.save("zdrvcpl.txt", arma::raw_ascii);
-	zberry.save("zberry.txt", arma::raw_ascii);
-	zF.save("zF.txt", arma::raw_ascii);
+	zE.save("data/test/zE.txt", arma::raw_ascii);
+	zdrvcpl.save("data/test/zdrvcpl.txt", arma::raw_ascii);
+	zberry.save("data/test/zberry.txt", arma::raw_ascii);
+	zF.save("data/test/zF.txt", arma::raw_ascii);
 //	std::cout << "   test TLS end" << std::endl;
 
 
