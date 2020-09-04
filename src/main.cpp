@@ -2,6 +2,7 @@
 #include "tully.h"
 #include <mpi.h>
 #include <iostream>
+#include <iomanip>
 
 using namespace fssh;
 
@@ -53,10 +54,11 @@ int main() {
         MPI_Reduce(&t1_local, &t1, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
         if (id == 0) {
-            std::cout << "r0 = " << (double)r0 / n_trajs << std::endl;
-            std::cout << "r1 = " << (double)r1 / n_trajs << std::endl;
-            std::cout << "t0 = " << (double)t0 / n_trajs << std::endl;
-            std::cout << "t1 = " << (double)t1 / n_trajs << std::endl;
+            std::cout << "r0 = " << std::setw(6) << (double)r0 / n_trajs 
+                << "    r1 = " << std::setw(6) << (double)r1 / n_trajs
+                << "    t0 = " << std::setw(6) << (double)t0 / n_trajs
+                << "    t1 = " << std::setw(6) << (double)t1 / n_trajs 
+                << std::endl;
         }
     }
 
