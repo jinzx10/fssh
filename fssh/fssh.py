@@ -3,6 +3,10 @@ import matplotlib.pyplot as plt
 
 from mpi4py import MPI
 
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+nprocs = comm.Get_size()
+
 class FSSH1990():
 
     def __init__(self, model, mass, dtc, max_ntc):
@@ -95,7 +99,7 @@ class FSSH1990():
 
     def update_prop(self):
         # update time-derivative coupling, electronic Hamiltonian
-        self.H_elec = self.model.H_elec(x)
+        self.H_elec = self.model.H_elec(self.x)
         self.T_drvcpl = self.model.drvcpl(self.x)
 
     def drho_dt(self, rho_tmp):
@@ -114,13 +118,13 @@ class FSSH1990():
         self.dtq = self.dtc/self.rcq if self.rcq > 1 else self.dtc
 
     def tot_energy(self):
-        return 0.5*self.mass*self.v*self.v + self.H_elec(self.state,self.state)
+        return 0.5*self.mass*self.v*self.v + self.H_elec[self.state,self.state]
 
     def hop(self):
         # (d/dt)rho_mm = -\sum_l g_lm
         # g is antisymmetric
         # g_lm = 2*Re(T_ml*rho_lm)
-        g = 2.0 * np.real(self.T_drvcpl[self.state,:] * rho[:,self.state])
+        g = 2.0 * np.real(self.T_drvcpl[self.state,:] * self.rho[:,self.state])
         occ = np.real(self.rho[self.state,self.state])
 
         # hopping probability to each state 
@@ -131,26 +135,23 @@ class FSSH1990():
         final_state = 0
 
         r = np.random.rand()
-        dr = 0.0
-
-        for final_state in range(0, sz_elec):
-            if r < P_cumu(fs):
+        for final_state in range(0, self.model.sz_elec+1):
+            if final_state == self.model.sz_elec: # no hopping happens
+                return
+            if r < P_cumu[final_state]:
                 break
 
-        if final_state == sz_elec-1: # no hopping happens
-            return
-        else: # hopping happens
-            # check whether frustrated or not
-            # energy needed to hop
-            dE = H_elec[final_state,final_state] - H_elec[self.state,self.state]
-            if dE < 0.5 * self.mass * self.v * self.v:
-                # successfull hop
-                v_sign = 1 if self.v > 0 else -1
-                self.v = v_sign * np.sqrt(self.v*self.v - 2.0*dE/self.mass)
-                self.state = final_state
-                self.has_hop = True
-            else:
-                self.num_frustrated_hops += 1
+        # hopping may happen
+        # check whether frustrated or not
+        dE = self.H_elec[final_state,final_state] - self.H_elec[self.state,self.state]
+        if dE < 0.5 * self.mass * self.v * self.v:
+            # successfull hop
+            v_sign = 1 if self.v > 0 else -1
+            self.v = v_sign * np.sqrt(self.v*self.v - 2.0*dE/self.mass)
+            self.state = final_state
+            self.has_hop = True
+        else:
+            self.num_frustrated_hops += 1
 
 
 
@@ -162,7 +163,7 @@ class Tully1():
 
     sz_elec = 2
 
-    def terminate(x):
+    def terminate(self, x):
         return True if (x > 10 or x < -10) else False
 
     ###############################################################
@@ -269,5 +270,59 @@ plt.plot(x, dc/50, color='C2')
 
 plt.show()
 '''
+mass = 2000
+dtc = 2.0
+max_ntc = 10000
+
+n_trajs = 100
+n_trajs_local = int(n_trajs/nprocs)
+
+sh = FSSH1990(model, mass, dtc, max_ntc)
+
+klist = [4]
+nk = len(klist)
+
+for ik in range(0, nk):
+    k = klist[ik]
+    v0 = k / mass
+    x0 = -9.9
+    rho0 = np.array([[1.0,0.0],[0.0,0.0]], dtype=complex)
+
+    # r: reflection; t: transmission
+    r0_local = 0
+    r1_local = 0
+    t0_local = 0
+    t1_local = 0
+
+    for it in range(0, n_trajs_local):
+        flag = sh.propagate(0, x0, v0, rho0)
+        if flag == 0: # successfully exit
+            if sh.x > 10: # transmission
+                if sh.state == 0:
+                    t0_local += 1
+                else:
+                    t1_local += 1
+            else:
+                if sh.state == 0:
+                    r0_local += 1
+                else:
+                    r1_local += 1
+        else: # does not terminate within max_ntc
+            print('trajectory does not terminate!')
+
+    t0 = comm.reduce(t0_local, op=MPI.SUM, root=0)
+    t1 = comm.reduce(t1_local, op=MPI.SUM, root=0)
+    r0 = comm.reduce(r0_local, op=MPI.SUM, root=0)
+    r1 = comm.reduce(r1_local, op=MPI.SUM, root=0)
+
+    if rank == 0:
+        print('r0 = ', r0/n_trajs)
+        print('r1 = ', r1/n_trajs)
+        print('t0 = ', t0/n_trajs)
+        print('t1 = ', t1/n_trajs)
+
+MPI.Finalize()
+
+
 
 
