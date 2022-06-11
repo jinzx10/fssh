@@ -16,6 +16,7 @@ class FSSH1990():
         self.dtc = dtc          # dt for a classical time step
         self.max_ntc = max_ntc  # maximum number of classical time steps
         self.reset()
+        self.dtq = dtc
 
     def reset(self):
         self.x = None
@@ -23,20 +24,20 @@ class FSSH1990():
         self.state = None
         self.rho = None
 
-        self.rcq = None         # number of quantum steps within a classical step, must be an integer
-        self.dtq = None         # dt for a quantum step
-        self.has_hop = False    # 
-        self.H_elec = None      # electronic Hamiltonian
-        self.T_drvcpl = None    # time-derivative coupling
+        #self.rcq = None         # number of quantum steps within a classical step, must be an integer
+        #self.dtq = None         # dt for a quantum step
+        #self.has_hop = False    # 
+        #self.H_elec = None      # electronic Hamiltonian
+        #self.T_drvcpl = None    # time-derivative coupling
 
         # counter for classical steps
-        self.itc = 0
+        #self.itc = 0
 
         # trajectory histories
-        self.x_t = np.zeros(max_ntc)
-        self.v_t = np.zeros(max_ntc)
-        self.E_t = np.zeros(max_ntc)
-        self.state_t = np.zeros(max_ntc, dtype=int)
+        #self.x_t = np.zeros(max_ntc)
+        #self.v_t = np.zeros(max_ntc)
+        #self.E_t = np.zeros(max_ntc)
+        #self.state_t = np.zeros(max_ntc, dtype=int)
         self.num_frustrated_hops = 0
 
     def propagate(self, state0, x0, v0, rho0):
@@ -48,13 +49,15 @@ class FSSH1990():
         self.rho = rho0
 
         self.update_prop()
-        self.collect()
 
         # propagate
-        for self.itc in range(1, self.max_ntc):
+        for itc in range(0, self.max_ntc):
             self.evolve_nucl()
             self.update_prop()
-            self.calc_dtq()
+            #self.calc_dtq()
+
+            self.evolve_elec()
+            self.hop()
 
             '''
             self.has_hop = False
@@ -63,40 +66,26 @@ class FSSH1990():
                 if not self.has_hop:
                     self.hop()
             '''
-            #################################
-            # test-1
-            for iq in range(0, self.rcq):
-                self.evolve_elec()
-                self.hop()
-            # test-2 would be to use dtc instead of dtq and keep has_hop check
-            #################################
 
-            self.collect()
 
             if self.model.terminate(self.x):
                 # trajectory finishes wihtin max_ntc steps
-                np.resize(self.x_t, self.itc+1)
-                np.resize(self.v_t, self.itc+1)
-                np.resize(self.E_t, self.itc+1)
-                np.resize(self.state_t, self.itc+1)
+                #np.resize(self.x_t, self.itc+1)
+                #np.resize(self.v_t, self.itc+1)
+                #np.resize(self.E_t, self.itc+1)
+                #np.resize(self.state_t, self.itc+1)
                 return 0
 
         # trajectory does not terminate within max_ntc steps
         return 1
-
-    def collect(self):
-        self.state_t[self.itc] = self.state
-        self.x_t[self.itc] = self.x
-        self.v_t[self.itc] = self.v
-        self.E_t[self.itc] = self.tot_energy()
 
     def evolve_nucl(self):
         # velocity-Verlet
         F = self.model.force(self.x, self.state)
         a = F / self.mass
         self.x += self.v * self.dtc + 0.5 * a * self.dtc * self.dtc
-        F = self.model.force(self.x, self.state)
-        a_new = F / self.mass
+        F_new = self.model.force(self.x, self.state)
+        a_new = F_new / self.mass
         self.v += 0.5 * (a + a_new) * self.dtc
 
     def evolve_elec(self):
@@ -118,21 +107,43 @@ class FSSH1990():
         return -1j * (H_tmp @ rho_tmp - rho_tmp @ H_tmp)
 
     def calc_dtq(self):
-        #dtq1 = 0.02 / np.max(np.abs( self.T_drvcpl ))
-        #
-        #e, _ = np.linalg.eigh(self.H_elec)
-        #dtq2 = 0.02 / np.max(np.abs( e - np.mean(e) ))
+        '''
+        dtq1 = 0.02 / np.max(np.abs( self.T_drvcpl ))
+        
+        e, _ = np.linalg.eigh(self.H_elec)
+        dtq2 = 0.02 / np.max(np.abs( e - np.mean(e) ))
 
-        #raw_dtq = min(self.dtc, dtq1, dtq2)
-        #self.rcq = int(self.dtc/raw_dtq)
-        #self.dtq = self.dtc/self.rcq if self.rcq > 1 else self.dtc
-
-        self.rcq = 1
+        raw_dtq = min(self.dtc, dtq1, dtq2)
+        self.rcq = int(self.dtc/raw_dtq)
+        self.dtq = self.dtc/self.rcq if self.rcq > 1 else self.dtc
+        '''
         self.dtq = self.dtc
+        self.rcq = 1
 
     def tot_energy(self):
         return 0.5*self.mass*self.v*self.v + self.H_elec[self.state,self.state]
 
+    def hop(self):
+        v_sign = 1.0 if self.v > 0 else -1.0
+        drho00 = -2.0*self.T_drvcpl[0,1]*(self.rho[0,1].real)
+        Ek = 0.5*self.mass*self.v*self.v
+        dE = self.H_elec[1,1] - self.H_elec[0,0]
+        rho00 = self.rho[0,0].real
+        rho11 = 1.0-rho00
+
+        r = np.random.rand()
+        if self.state == 1:
+            if r < self.dtc * drho00 / rho11:
+                self.state = 0
+                self.v = v_sign * np.sqrt(2.0*(Ek+dE)/self.mass)
+        else:
+            if r < self.dtc * (-drho00) / rho00:
+                if Ek > dE:
+                    self.state = 1
+                    self.v = v_sign * np.sqrt(2.0*(Ek-dE)/self.mass)
+                else:
+                    self.num_frustrated_hops += 1
+'''
     def hop(self):
         # (d/dt)rho_mm = -\sum_l g_lm
         # g is antisymmetric
@@ -148,13 +159,14 @@ class FSSH1990():
         final_state = 0
 
         r = np.random.rand()
-        for final_state in range(0, self.model.sz_elec):
+        for final_state in range(0, self.model.sz_elec+1):
+            if final_state == self.model.sz_elec: # no hopping happens
+                return
             if r < P_cumu[final_state]:
                 break
-            if final_state == self.model.sz_elec-1: # no hopping happens
-                return
 
-        # hopping may happen, check whether frustrated or not
+        # hopping may happen
+        # check whether frustrated or not
         dE = self.H_elec[final_state,final_state] - self.H_elec[self.state,self.state]
         if dE < 0.5 * self.mass * self.v * self.v:
             # successfull hop
@@ -164,6 +176,7 @@ class FSSH1990():
             self.has_hop = True
         else:
             self.num_frustrated_hops += 1
+'''
 
 
 
@@ -176,7 +189,7 @@ class Tully1():
     sz_elec = 2
 
     def terminate(self, x):
-        return True if (x > 5 or x < -5) else False
+        return True if (x > 10 or x < -10) else False
 
     ###############################################################
     #                   common interface
@@ -255,7 +268,7 @@ class Tully1():
 #                   main starts
 ###############################################################
 
-mode = 'MODE'
+mode = 'production'
 model = Tully1()
 
 '''
@@ -286,16 +299,16 @@ exit()
 '''
 
 mass = 2000
-max_ntc = MAX_NTC if mode == 'production' else 10000
+max_ntc = 100000 if mode == 'production' else 10000
 
-n_trajs = NUM_TRAJS if mode == 'production' else 10
+n_trajs = 50 if mode == 'production' else 10
 n_trajs_local = int(n_trajs/nprocs)
 rem = n_trajs % nprocs
 if rank < rem:
     n_trajs_local += 1
 
 # use v0-dependent dtc later
-sh = FSSH1990(model, mass, 1.0, max_ntc)
+sh = FSSH1990(model=model, mass=mass, dtc=1.0, max_ntc=max_ntc)
 
 klist = [3, 3.5, 4, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9, 5, \
         5.5, 6, 6.5, 7, 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 7.8, 7.9, \
@@ -304,7 +317,7 @@ klist = [3, 3.5, 4, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9, 5, \
         10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, \
         21, 22, 23, 24, 25, 26, 27, 28, 29, 30]
 
-klist = [20,25,30]
+klist = [50.0]
 
 nk = len(klist)
 
@@ -319,9 +332,8 @@ MPI.Wtime()
 
 for ik in range(0, nk):
     k = klist[ik]
-    sh.dtc = 10.0 / k
     v0 = k / mass
-    x0 = -4.95
+    x0 = -9.95
     rho0 = np.array([[1.0,0.0],[0.0,0.0]], dtype=complex)
 
     # r: reflection; t: transmission
@@ -331,9 +343,11 @@ for ik in range(0, nk):
     t1_local = 0
 
     for it in range(0, n_trajs_local):
-        flag = sh.propagate(state0=0, x0=x0, v0=v0, rho0=rho0)
-        if flag == 0: # successfully terminate
-            if sh.x > 5: # transmission
+        flag = sh.propagate(0, x0, v0, rho0)
+        #print('x = %6.3f, v = %6.3f, state = %i'%(sh.x, sh.v, sh.state), 'rho = ', sh.rho)
+        print('x = %6.3f, v = %6.3f, state = %i'%(sh.x, sh.v, sh.state))
+        if flag == 0: # successfully exit
+            if sh.x > 10: # transmission
                 if sh.state == 0:
                     t0_local += 1
                 else:
@@ -354,6 +368,8 @@ for ik in range(0, nk):
 
     if rank == 0:
         print('k = %4.1f finished, time elapsed = %8.1f seconds'%(k, MPI.Wtime()))
+        print('t0 = %6.3f    t1 = %6.3f    r0 = %6.3f'%(t0_k[ik]/n_trajs, t1_k[ik]/n_trajs, r0_k[ik]))
+
 
     comm.Barrier()
 
@@ -363,13 +379,16 @@ if rank == 0:
     r0_k /= n_trajs
     r1_k /= n_trajs
 
-    fh = h5py.File('tully1_var1.h5', 'w')
+    '''
+    fh = h5py.File('tully1.h5', 'w')
     fh['k'] = klist
     fh['t0'] = t0_k
     fh['t1'] = t1_k
     fh['r0'] = r0_k
     fh['r1'] = r1_k
     fh.close()
+    '''
+
 
 MPI.Finalize()
 
